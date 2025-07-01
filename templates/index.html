@@ -13,6 +13,9 @@
   <meta name="keywords" content="IT professional, systems administrator, Norman Kipkorir, portfolio, resume">
   <meta name="author" content="Norman Kipkorir">
 
+  <!-- Include particles.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
   <!-- Custom Styles -->
   <style>
     body {
@@ -24,15 +27,32 @@
     section {
       scroll-margin-top: 5rem;
     }
+
+    /* Particle canvas styling */
+    #particles-js {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1; /* Ensure particles stay behind content */
+    }
+
+    /* Ensure main content is above particles */
+    .main-content {
+      position: relative;
+      z-index: 10;
+    }
   </style>
 </head>
 <body class="bg-[#0a0f2c] text-white font-sans">
+  <!-- Particle Canvas -->
+  <div id="particles-js"></div>
 
   <!-- Responsive Navbar -->
   <nav class="bg-[#0a0f2c] shadow-md fixed top-0 left-0 right-0 z-50">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between items-center py-4">
-
         <!-- Logo / Name -->
         <div class="text-white font-bold text-xl">Norman Ngetich</div>
 
@@ -52,7 +72,6 @@
                 class="md:hidden text-white focus:outline-none">
           ☰
         </button>
-
       </div>
 
       <!-- Mobile Menu -->
@@ -69,8 +88,7 @@
   </nav>
 
   <!-- Main Content -->
-  <div class="max-w-4xl mx-auto px-6 py-10">
-
+  <div class="main-content max-w-4xl mx-auto px-6 py-10">
     <!-- Header -->
     <header class="text-center py-10 mt-20">
       <h1 class="text-4xl font-bold mb-2">NORMAN KIPKORIR NGETICH</h1>
@@ -93,7 +111,6 @@
     <!-- Work Experience -->
     <section id="experience" class="mb-10">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Work Experience</h2>
-
       <div class="mb-6">
         <h3 class="text-xl font-bold">IT Support Technician</h3>
         <p class="text-sm text-gray-400">The Eldoret National Polytechnic | February 2023 - September 2024</p>
@@ -110,7 +127,6 @@
           <li>Managed IT inventory and equipment lifecycle.</li>
         </ul>
       </div>
-
       <div class="mb-6">
         <h3 class="text-xl font-bold">Systems Support Intern</h3>
         <p class="text-sm text-gray-400">SACCO Societies Regulatory Authority | August 2022 - December 2022</p>
@@ -121,7 +137,6 @@
           <li>Developed technical documentation and standard operating procedures.</li>
         </ul>
       </div>
-
       <div>
         <h3 class="text-xl font-bold">Part-Time Kitchen Assistant</h3>
         <p class="text-sm text-gray-400">Bandaptai Hotel | June 2018 - February 2020</p>
@@ -136,7 +151,6 @@
     <!-- Education -->
     <section id="education" class="mb-10">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Education</h2>
-
       <div class="mb-6">
         <h3 class="text-xl font-bold">MBA in Entrepreneurship & Digital Transformation</h3>
         <p class="text-sm text-gray-400">University of Nicosia, Cyprus | September 2024 – Present</p>
@@ -145,7 +159,6 @@
           <li>Expected completion: June 2026</li>
         </ul>
       </div>
-
       <div class="mb-6">
         <h3 class="text-xl font-bold">Bachelor of Science in Information Technology</h3>
         <p class="text-sm text-gray-400">Kabarak University | May 2018 – December 2022</p>
@@ -153,7 +166,6 @@
           <li>Second Class, Upper Division</li>
         </ul>
       </div>
-
       <div>
         <h3 class="text-xl font-bold">Certificate in Android and Web Development Systems</h3>
         <p class="text-sm text-gray-400">E-mobilis Institute | January 2018 – April 2018</p>
@@ -178,19 +190,18 @@
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Contact Me</h2>
       <p class="text-gray-300">Please feel free to reach out for opportunities or collaboration.</p>
       <ul class="mt-2 list-disc ml-5 text-gray-300">
-        <li>Email: <a href="mailto:ngetichkipkorir@gmail.com" class="text-blue-400 underline">ngetichkipkorir@gmail.com</a></li>
+        <li>Email: <a href="mailto:nawmankipkorir@gmail.com" class="text-blue-400 underline">ngetichkipkorir@gmail.com</a></li>
         <li>Phone: +357 9441 8735</li>
       </ul>
     </section>
 
     <!-- Footer -->
     <footer class="text-center py-10 text-gray-500">
-      &copy; 2025 Norman Ngetich. All rights reserved.
+      © 2025 Norman Ngetich. All rights reserved.
     </footer>
-
   </div>
 
-  <!-- Smooth Scroll + Mobile Menu Toggle -->
+  <!-- Smooth Scroll + Mobile Menu Toggle + Particles.js Initialization -->
   <script>
     // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -220,6 +231,105 @@
       link.addEventListener('click', () => {
         mobileMenu.classList.add('hidden');
       });
+    });
+
+    // Initialize particles.js
+    particlesJS('particles-js', {
+      particles: {
+        number: {
+          value: 80,
+          density: {
+            enable: true,
+            value_area: 800
+          }
+        },
+        color: {
+          value: '#60a5fa' // Blue particles to match theme
+        },
+        shape: {
+          type: 'circle',
+          stroke: {
+            width: 0,
+            color: '#000000'
+          }
+        },
+        opacity: {
+          value: 0.5,
+          random: false,
+          anim: {
+            enable: false,
+            speed: 1,
+            opacity_min: 0.1,
+            sync: false
+          }
+        },
+        size: {
+          value: 3,
+          random: true,
+          anim: {
+            enable: false,
+            speed: 40,
+            size_min: 0.1,
+            sync: false
+          }
+        },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: '#60a5fa',
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: 'none',
+          random: false,
+          straight: false,
+          out_mode: 'out',
+          bounce: false
+        }
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: {
+          onhover: {
+            enable: true,
+            mode: 'repulse'
+          },
+          onclick: {
+            enable: true,
+            mode: 'push'
+          },
+          resize: true
+        },
+        modes: {
+          grab: {
+            distance: 400,
+            line_linked: {
+              opacity: 1
+            }
+          },
+          bubble: {
+            distance: 400,
+            size: 40,
+            duration: 2,
+            opacity: 8,
+            speed: 3
+          },
+          repulse: {
+            distance: 100,
+            duration: 0.4
+          },
+          push: {
+            particles_nb: 4
+          },
+          remove: {
+            particles_nb: 2
+          }
+        }
+      },
+      retina_detect: true
     });
   </script>
 </body>
