@@ -8,13 +8,20 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script> 
 
+  <!-- AOS (Animate on Scroll) CDN -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- Typed.js CDN for typing animation -->
+  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+
+  <!-- Particles.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
   <!-- SEO Meta Tags -->
   <meta name="description" content="Norman Kipkorir - IT Professional & Systems Administrator | MBA Candidate at University of Nicosia">
   <meta name="keywords" content="IT professional, systems administrator, Norman Kipkorir, portfolio, resume">
   <meta name="author" content="Norman Kipkorir">
-
-  <!-- Include particles.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 
   <!-- Custom Styles -->
   <style>
@@ -22,6 +29,42 @@
       background-color: #0a0f2c;
       color: white;
       padding-top: 4rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Light mode styles */
+    body.light-mode {
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+
+    body.light-mode nav {
+      background-color: #ffffff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    body.light-mode .text-gray-300 {
+      color: #4b5563;
+    }
+
+    body.light-mode .text-blue-300 {
+      color: #2563eb;
+    }
+
+    body.light-mode .border-blue-500 {
+      border-color: #2563eb;
+    }
+
+    body.light-mode a.text-blue-400 {
+      color: #1d4ed8;
+    }
+
+    body.light-mode .text-gray-400 {
+      color: #6b7280;
+    }
+
+    body.light-mode .text-gray-500 {
+      color: #9ca3af;
     }
 
     section {
@@ -35,13 +78,76 @@
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: -1; /* Ensure particles stay behind content */
+      z-index: -1;
+      transition: opacity 0.3s;
     }
 
-    /* Ensure main content is above particles */
+    body.light-mode #particles-js {
+      opacity: 0.2; /* Subtle particles in light mode */
+    }
+
+    /* Main content above particles */
     .main-content {
       position: relative;
       z-index: 10;
+    }
+
+    /* Progress bar styling */
+    .progress-bar {
+      height: 10px;
+      background-color: #4b5563;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      background-color: #60a5fa;
+      transition: width 1.5s ease-in-out;
+    }
+
+    body.light-mode .progress-bar {
+      background-color: #d1d5db;
+    }
+
+    body.light-mode .progress {
+      background-color: #2563eb;
+    }
+
+    /* Parallax section */
+    .parallax {
+      background: url('https://source.unsplash.com/random/1920x1080/?tech') no-repeat center;
+      background-size: cover;
+      background-attachment: fixed;
+      padding: 4rem 0;
+    }
+
+    /* Back-to-top button */
+    #back-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #60a5fa;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 50%;
+      display: none;
+      z-index: 100;
+      transition: background-color 0.3s;
+    }
+
+    body.light-mode #back-to-top {
+      background-color: #2563eb;
+    }
+
+    /* Project card hover effect */
+    .project-card {
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .project-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
@@ -60,18 +166,21 @@
         <ul class="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
           <li><a href="#about" class="hover:text-blue-400 transition">About</a></li>
           <li><a href="#experience" class="hover:text-blue-400 transition">Experience</a></li>
+          <li><a href="#projects" class="hover:text-blue-400 transition">Projects</a></li>
           <li><a href="#education" class="hover:text-blue-400 transition">Education</a></li>
           <li><a href="#skills" class="hover:text-blue-400 transition">Skills</a></li>
           <li><a href="#contact" class="hover:text-blue-400 transition">Contact</a></li>
         </ul>
 
-        <!-- Mobile Menu Button -->
-        <button id="menu-btn"
-                aria-controls="mobile-menu"
-                aria-expanded="false"
-                class="md:hidden text-white focus:outline-none">
-          ☰
-        </button>
+        <!-- Theme Toggle + Mobile Menu Button -->
+        <div class="flex items-center space-x-4">
+          <button id="theme-toggle" class="text-white focus:outline-none" title="Toggle Theme">
+            🌙
+          </button>
+          <button id="menu-btn" aria-controls="mobile-menu" aria-expanded="false" class="md:hidden text-white focus:outline-none">
+            ☰
+          </button>
+        </div>
       </div>
 
       <!-- Mobile Menu -->
@@ -79,6 +188,7 @@
         <ul class="space-y-2">
           <li><a href="#about" class="block hover:text-blue-400 transition pl-1">About</a></li>
           <li><a href="#experience" class="block hover:text-blue-400 transition pl-1">Experience</a></li>
+          <li><a href="#projects" class="block hover:text-blue-400 transition pl-1">Projects</a></li>
           <li><a href="#education" class="block hover:text-blue-400 transition pl-1">Education</a></li>
           <li><a href="#skills" class="block hover:text-blue-400 transition pl-1">Skills</a></li>
           <li><a href="#contact" class="block hover:text-blue-400 transition pl-1">Contact</a></li>
@@ -87,19 +197,22 @@
     </div>
   </nav>
 
+  <!-- Back-to-Top Button -->
+  <button id="back-to-top" class="text-sm">↑</button>
+
   <!-- Main Content -->
   <div class="main-content max-w-4xl mx-auto px-6 py-10">
-    <!-- Header -->
-    <header class="text-center py-10 mt-20">
+    <!-- Header with Typing Animation -->
+    <header class="text-center py-10 mt-20" data-aos="fade-up">
       <h1 class="text-4xl font-bold mb-2">NORMAN KIPKORIR NGETICH</h1>
-      <p class="text-blue-300 text-xl">IT Professional | Systems Administrator | MBA Candidate</p>
+      <p class="text-blue-300 text-xl"><span id="typed"></span></p>
       <div class="mt-4 text-sm text-gray-400">
         Cyprus | nawmankipkorir@gmail.com | +35794418735
       </div>
     </header>
 
     <!-- About Section -->
-    <section id="about" class="mb-10">
+    <section id="about" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">About Me</h2>
       <p class="leading-relaxed text-gray-300">
         Information Technology (IT) professional with expertise in remote systems administration and infrastructure management.
@@ -109,7 +222,7 @@
     </section>
 
     <!-- Work Experience -->
-    <section id="experience" class="mb-10">
+    <section id="experience" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Work Experience</h2>
       <div class="mb-6">
         <h3 class="text-xl font-bold">IT Support Technician</h3>
@@ -148,8 +261,32 @@
       </div>
     </section>
 
+    <!-- Projects Section -->
+    <section id="projects" class="mb-10 parallax" data-aos="fade-up">
+      <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Projects</h2>
+      <div class="flex justify-center space-x-4 mb-4">
+        <button class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-filter="all">All</button>
+        <button class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-filter="web">Web</button>
+        <button class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-filter="automation">Automation</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 project-container">
+        <div class="project-card bg-gray-800 p-4 rounded-lg" data-category="web">
+          <h3 class="text-lg font-bold">Portfolio Website</h3>
+          <p class="text-gray-300">A responsive portfolio with particle effects and animations.</p>
+        </div>
+        <div class="project-card bg-gray-800 p-4 rounded-lg" data-category="automation">
+          <h3 class="text-lg font-bold">System Automation Script</h3>
+          <p class="text-gray-300">PowerShell script for automated server maintenance.</p>
+        </div>
+        <div class="project-card bg-gray-800 p-4 rounded-lg" data-category="web">
+          <h3 class="text-lg font-bold">Web Monitoring Dashboard</h3>
+          <p class="text-gray-300">A dashboard for real-time system monitoring using Zabbix.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- Education -->
-    <section id="education" class="mb-10">
+    <section id="education" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Education</h2>
       <div class="mb-6">
         <h3 class="text-xl font-bold">MBA in Entrepreneurship & Digital Transformation</h3>
@@ -172,37 +309,83 @@
       </div>
     </section>
 
-    <!-- Skills -->
-    <section id="skills" class="mb-10">
+    <!-- Skills with Progress Bars -->
+    <section id="skills" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Technical Skills</h2>
-      <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
-        <li><strong>System Administration:</strong> Linux, Windows Server, Active Directory</li>
-        <li><strong>Cloud Platforms:</strong> AWS, Azure</li>
-        <li><strong>Automation:</strong> PowerShell, Bash, Python</li>
-        <li><strong>Monitoring:</strong> Nagios, Zabbix</li>
-        <li><strong>Virtualization:</strong> VMware, Hyper-V</li>
-        <li><strong>Security:</strong> Firewall management, Security compliance</li>
+      <ul class="space-y-4 text-gray-300">
+        <li>
+          <span>Linux Administration</span>
+          <div class="progress-bar"><div class="progress" style="width: 90%;"></div></div>
+        </li>
+        <li>
+          <span>Windows Server</span>
+          <div class="progress-bar"><div class="progress" style="width: 85%;"></div></div>
+        </li>
+        <li>
+          <span>AWS/Azure</span>
+          <div class="progress-bar"><div class="progress" style="width: 80%;"></div></div>
+        </li>
+        <li>
+          <span>PowerShell/Bash</span>
+          <div class="progress-bar"><div class="progress" style="width: 75%;"></div></div>
+        </li>
+        <li>
+          <span>Nagios/Zabbix</span>
+          <div class="progress-bar"><div class="progress" style="width: 70%;"></div></div>
+        </li>
+        <li>
+          <span>VMware/Hyper-V</span>
+          <div class="progress-bar"><div class="progress" style="width: 65%;"></div></div>
+        </li>
       </ul>
     </section>
 
-    <!-- Contact -->
-    <section id="contact" class="mb-10">
+    <!-- Contact Form -->
+    <section id="contact" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Contact Me</h2>
-      <p class="text-gray-300">Please feel free to reach out for opportunities or collaboration.</p>
-      <ul class="mt-2 list-disc ml-5 text-gray-300">
+      <p class="text-gray-300 mb-4">Please feel free to reach out for opportunities or collaboration.</p>
+      <form id="contact-form" class="space-y-4">
+        <div>
+          <label for="name" class="block text-sm text-gray-300">Name</label>
+          <input type="text" id="name" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-blue-500" required>
+        </div>
+        <div>
+          <label for="email" class="block text-sm text-gray-300">Email</label>
+          <input type="email" id="email" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-blue-500" required>
+        </div>
+        <div>
+          <label for="message" class="block text-sm text-gray-300">Message</label>
+          <textarea id="message" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-blue-500" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Send Message</button>
+      </form>
+      <p id="form-message" class="text-gray-300 mt-2 hidden"></p>
+      <ul class="mt-4 list-disc ml-5 text-gray-300">
         <li>Email: <a href="mailto:nawmankipkorir@gmail.com" class="text-blue-400 underline">nawmankipkorir@gmail.com</a></li>
         <li>Phone: +357 9441 8735</li>
       </ul>
     </section>
 
     <!-- Footer -->
-    <footer class="text-center py-10 text-gray-500">
+    <footer class="text-center py-10 text-gray-500" data-aos="fade-up">
       © 2025 Norman Ngetich. All rights reserved.
     </footer>
   </div>
 
-  <!-- Smooth Scroll + Mobile Menu Toggle + Particles.js Initialization -->
+  <!-- JavaScript -->
   <script>
+    // Initialize AOS
+    AOS.init({ duration: 1000, once: true });
+
+    // Typed.js for typing animation
+    const typed = new Typed('#typed', {
+      strings: ['IT Professional', 'Systems Administrator', 'MBA Candidate'],
+      typeSpeed: 50,
+      backSpeed: 30,
+      backDelay: 2000,
+      loop: true
+    });
+
     // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
@@ -221,115 +404,87 @@
     // Mobile menu toggle
     const menuBtn = document.getElementById('menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
-
     menuBtn.addEventListener('click', () => {
       mobileMenu.classList.toggle('hidden');
     });
-
-    // Close mobile menu after clicking a link
     document.querySelectorAll('#mobile-menu a').forEach(link => {
       link.addEventListener('click', () => {
         mobileMenu.classList.add('hidden');
       });
     });
 
-    // Initialize particles.js
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      themeToggle.textContent = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
+      localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+    });
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-mode');
+      themeToggle.textContent = '🌙';
+    }
+
+    // Particles.js
     particlesJS('particles-js', {
       particles: {
-        number: {
-          value: 80,
-          density: {
-            enable: true,
-            value_area: 800
-          }
-        },
-        color: {
-          value: '#60a5fa' // Blue particles to match theme
-        },
-        shape: {
-          type: 'circle',
-          stroke: {
-            width: 0,
-            color: '#000000'
-          }
-        },
-        opacity: {
-          value: 0.5,
-          random: false,
-          anim: {
-            enable: false,
-            speed: 1,
-            opacity_min: 0.1,
-            sync: false
-          }
-        },
-        size: {
-          value: 3,
-          random: true,
-          anim: {
-            enable: false,
-            speed: 40,
-            size_min: 0.1,
-            sync: false
-          }
-        },
-        line_linked: {
-          enable: true,
-          distance: 150,
-          color: '#60a5fa',
-          opacity: 0.4,
-          width: 1
-        },
-        move: {
-          enable: true,
-          speed: 2,
-          direction: 'none',
-          random: false,
-          straight: false,
-          out_mode: 'out',
-          bounce: false
-        }
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#60a5fa' },
+        shape: { type: 'circle', stroke: { width: 0, color: '#000000' } },
+        opacity: { value: 0.5, random: false },
+        size: { value: 3, random: true },
+        line_linked: { enable: true, distance: 150, color: '#60a5fa', opacity: 0.4, width: 1 },
+        move: { enable: true, speed: 2, direction: 'none', random: false, straight: false, out_mode: 'out', bounce: false }
       },
       interactivity: {
         detect_on: 'canvas',
-        events: {
-          onhover: {
-            enable: true,
-            mode: 'repulse'
-          },
-          onclick: {
-            enable: true,
-            mode: 'push'
-          },
-          resize: true
-        },
-        modes: {
-          grab: {
-            distance: 400,
-            line_linked: {
-              opacity: 1
-            }
-          },
-          bubble: {
-            distance: 400,
-            size: 40,
-            duration: 2,
-            opacity: 8,
-            speed: 3
-          },
-          repulse: {
-            distance: 100,
-            duration: 0.4
-          },
-          push: {
-            particles_nb: 4
-          },
-          remove: {
-            particles_nb: 2
-          }
-        }
+        events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' }, resize: true },
+        modes: { grab: { distance: 400, line_linked: { opacity: 1 } }, bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 }, repulse: { distance: 100, duration: 0.4 }, push: { particles_nb: 4 }, remove: { particles_nb: 2 } }
       },
       retina_detect: true
+    });
+
+    // Back-to-top button
+    const backToTop = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+      backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Project filter
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const projectCards = document.querySelectorAll('.project-card');
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const filter = button.getAttribute('data-filter');
+        projectCards.forEach(card => {
+          card.style.display = filter === 'all' || card.getAttribute('data-category') === filter ? 'block' : 'none';
+        });
+      });
+    });
+
+    // Contact form validation
+    const contactForm = document.getElementById('contact-form');
+    const formMessage = document.getElementById('form-message');
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const message = document.getElementById('message').value.trim();
+      if (name && email && message && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        formMessage.textContent = 'Message sent successfully! (Note: This is a demo)';
+        formMessage.classList.remove('hidden', 'text-red-500');
+        formMessage.classList.add('text-green-500');
+        contactForm.reset();
+      } else {
+        formMessage.textContent = 'Please fill out all fields correctly.';
+        formMessage.classList.remove('hidden', 'text-green-500');
+        formMessage.classList.add('text-red-500');
+      }
+      setTimeout(() => formMessage.classList.add('hidden'), 3000);
     });
   </script>
 </body>
