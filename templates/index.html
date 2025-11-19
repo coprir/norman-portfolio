@@ -5,31 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Norman Kipkorir Ngetich | Portfolio</title>
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script> 
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- AOS (Animate on Scroll) CDN -->
+  <!-- AOS Animations -->
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
-  <!-- Typed.js CDN for typing animation -->
+  <!-- Typed.js -->
   <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
 
-  <!-- Particles.js CDN -->
+  <!-- Particles.js -->
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 
-  <!-- Font Awesome CDN for LinkedIn icon -->
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Google Translate API -->
+  <!-- Google Translate -->
   <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-  <!-- SEO Meta Tags -->
+  <!-- Meta tags -->
   <meta name="description" content="Norman Kipkorir - IT Professional & Systems Administrator | MBA Candidate at University of Nicosia | Multilingual Portfolio">
-  <meta name="keywords" content="IT professional, systems administrator, Norman Kipkorir, portfolio, resume, Greek, German, Russian, Spanish">
+  <meta name="keywords" content="IT professional, systems administrator, Norman Kipkorir, portfolio, resume, Greek, German, Russian, Spanish, French">
   <meta name="author" content="Norman Kipkorir">
 
-  <!-- Structured Data for SEO -->
+  <!-- Schema.org Person -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -51,7 +51,6 @@
     }
   </script>
 
-  <!-- Custom Styles -->
   <style>
     body {
       background-color: #0a0f2c;
@@ -240,20 +239,27 @@
     .translate-dropdown:hover .translate-dropdown-content {
       display: block;
     }
+
+    /* Hide Google Translate branding and iframes */
+    #google_translate_element {
+      display: none;
+    }
+
+    .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget img {
+      display: none !important;
+    }
   </style>
 </head>
 <body class="bg-[#0a0f2c] text-white font-sans">
-  <!-- Particle Canvas -->
+  <!-- Particles background -->
   <div id="particles-js"></div>
 
-  <!-- Responsive Navbar -->
+  <!-- Navbar -->
   <nav class="bg-[#0a0f2c] shadow-md fixed top-0 left-0 right-0 z-50">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex justify-between items-center py-4">
-        <!-- Logo / Name -->
         <div class="text-white font-bold text-xl logo-name">Norman Ngetich</div>
 
-        <!-- Desktop Menu -->
         <ul class="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
           <li><a href="#about" class="hover:text-blue-400 transition">About</a></li>
           <li><a href="#experience" class="hover:text-blue-400 transition">Experience</a></li>
@@ -261,7 +267,7 @@
           <li><a href="#education" class="hover:text-blue-400 transition">Education</a></li>
           <li><a href="#skills" class="hover:text-blue-400 transition">Skills</a></li>
           <li><a href="#contact" class="hover:text-blue-400 transition">Contact</a></li>
-          <!-- Translation Dropdown -->
+
           <li class="translate-dropdown">
             <a href="#" class="hover:text-blue-400 transition">🌐</a>
             <div class="translate-dropdown-content">
@@ -269,18 +275,18 @@
               <a href="#" data-lang="de" title="German">🇩🇪</a>
               <a href="#" data-lang="ru" title="Russian">🇷🇺</a>
               <a href="#" data-lang="es" title="Spanish">🇪🇸</a>
+              <a href="#" data-lang="fr" title="French">🇫🇷</a>
             </div>
           </li>
         </ul>
 
-        <!-- Theme Toggle + Mobile Menu Button -->
         <div class="flex items-center space-x-4">
-          <button id="theme-toggle" class="text-white focus:outline-none" title="Toggle Theme">🌙</button>
+          <button id="theme-toggle" class="text-white focus:outline-none" title="Toggle Theme">☀️</button>
           <button id="menu-btn" aria-controls="mobile-menu" aria-expanded="false" class="md:hidden text-white focus:outline-none">☰</button>
         </div>
       </div>
 
-      <!-- Mobile Menu -->
+      <!-- Mobile menu -->
       <div id="mobile-menu" class="hidden md:hidden pb-4 text-gray-300 text-sm font-medium">
         <ul class="space-y-2">
           <li><a href="#about" class="block hover:text-blue-400 transition pl-1">About</a></li>
@@ -296,6 +302,7 @@
               <a href="#" data-lang="de" class="block hover:text-blue-400 transition" title="German">🇩🇪</a>
               <a href="#" data-lang="ru" class="block hover:text-blue-400 transition" title="Russian">🇷🇺</a>
               <a href="#" data-lang="es" class="block hover:text-blue-400 transition" title="Spanish">🇪🇸</a>
+              <a href="#" data-lang="fr" class="block hover:text-blue-400 transition" title="French">🇫🇷</a>
             </div>
           </li>
         </ul>
@@ -303,15 +310,14 @@
     </div>
   </nav>
 
-  <!-- Back-to-Top Button -->
+  <!-- Back to top -->
   <button id="back-to-top" class="text-sm">↑</button>
 
-  <!-- Google Translate Element (Hidden) -->
-  <div id="google_translate_element" style="display: none;"></div>
+  <!-- Google Translate container (hidden via CSS) -->
+  <div id="google_translate_element"></div>
 
-  <!-- Main Content -->
+  <!-- Main content -->
   <div class="main-content max-w-4xl mx-auto px-6 py-10">
-    <!-- Header with Typing Animation -->
     <header class="text-center py-10 mt-20" data-aos="fade-up">
       <h1 class="text-4xl font-bold mb-2">NORMAN KIPKORIR NGETICH</h1>
       <p class="text-blue-300 text-xl"><span id="typed"></span></p>
@@ -320,7 +326,7 @@
       </div>
     </header>
 
-    <!-- About Section -->
+    <!-- About -->
     <section id="about" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">About Me</h2>
       <p class="leading-relaxed text-gray-300">
@@ -330,9 +336,23 @@
       </p>
     </section>
 
-    <!-- Work Experience -->
+    <!-- Experience -->
     <section id="experience" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Work Experience</h2>
+
+      <div class="mb-6">
+        <h3 class="text-xl font-bold">Crew Member</h3>
+        <p class="text-sm text-gray-400">Burger King Acropolis | November 2025 – Present</p>
+        <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
+          <li>Started working at Burger King Acropolis as a crew member.</li>
+          <li>Assisting with food preparation, customer service, and maintaining cleanliness standards.</li>
+          <li>Operating kitchen equipment and preparing menu items according to company standards.</li>
+          <li>Restocking supplies and ingredients to ensure smooth workflow during shifts.</li>
+          <li>Collaborating with team members to deliver fast and friendly service.</li>
+          <li>Following health, safety, and hygiene protocols at all times.</li>
+        </ul>
+      </div>
+
       <div class="mb-6">
         <h3 class="text-xl font-bold">IT Support Technician</h3>
         <p class="text-sm text-gray-400">The Eldoret National Polytechnic | February 2023 - September 2024</p>
@@ -349,6 +369,7 @@
           <li>Managed IT inventory and equipment lifecycle.</li>
         </ul>
       </div>
+
       <div class="mb-6">
         <h3 class="text-xl font-bold">Systems Support Technician</h3>
         <p class="text-sm text-gray-400">SACCO Societies Regulatory Authority | August 2022 - December 2022</p>
@@ -359,6 +380,7 @@
           <li>Developed technical documentation and standard operating procedures.</li>
         </ul>
       </div>
+
       <div>
         <h3 class="text-xl font-bold">Part-Time Kitchen Assistant</h3>
         <p class="text-sm text-gray-400">Bandaptai Hotel | June 2018 - February 2020</p>
@@ -370,7 +392,7 @@
       </div>
     </section>
 
-    <!-- Projects Section -->
+    <!-- Projects -->
     <section id="projects" class="mb-10 parallax" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Projects</h2>
       <div class="flex justify-center space-x-4 mb-4">
@@ -418,7 +440,7 @@
       </div>
     </section>
 
-    <!-- Skills with Progress Bars -->
+    <!-- Skills -->
     <section id="skills" class="mb-10" data-aos="fade-up">
       <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Technical Skills</h2>
       <ul class="space-y-4 text-gray-300">
@@ -487,16 +509,58 @@
     </footer>
   </div>
 
-  <!-- JavaScript -->
   <script>
     // Initialize Google Translate
     function googleTranslateElementInit() {
-      new google.translate.TranslateElement({
-        pageLanguage: 'en',
-        includedLanguages: 'el,de,ru,es',
-        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-        autoDisplay: false
-      }, 'google_translate_element');
+      if (typeof google !== 'undefined' && google.translate) {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          includedLanguages: 'el,de,ru,es,fr',
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false
+        }, 'google_translate_element');
+        console.log('Google Translate initialized successfully');
+      } else {
+        console.error('Google Translate API not loaded. Retrying in 1 second...');
+        setTimeout(googleTranslateElementInit, 1000);
+      }
+    }
+
+    // Function to trigger translation with MutationObserver
+    function triggerTranslation(lang) {
+      const translateSelect = document.querySelector('#google_translate_element select');
+      if (translateSelect) {
+        translateSelect.value = lang;
+        translateSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        console.log(`Translation triggered for language: ${lang}`);
+        return;
+      }
+
+      const targetNode = document.getElementById('google_translate_element');
+      if (!targetNode) return;
+
+      const observer = new MutationObserver((mutations, obs) => {
+        const select = document.querySelector('#google_translate_element select');
+        if (select) {
+          select.value = lang;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          console.log(`Translation triggered for language: ${lang} via MutationObserver`);
+          obs.disconnect();
+        }
+      });
+
+      observer.observe(targetNode, {
+        childList: true,
+        subtree: true
+      });
+
+      setTimeout(() => {
+        observer.disconnect();
+        if (!document.querySelector('#google_translate_element select')) {
+          console.error('Failed to find translate element after 10 seconds');
+          alert('Translation failed. Please try again later or contact support.');
+        }
+      }, 10000);
     }
 
     // Initialize AOS
@@ -514,10 +578,11 @@
     // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
-        e.preventDefault();
         const targetId = this.getAttribute('href');
+        if (!targetId || targetId === '#') return;
         const targetElement = document.querySelector(targetId);
         if (targetElement) {
+          e.preventDefault();
           window.scrollTo({
             top: targetElement.offsetTop - 60,
             behavior: 'smooth'
@@ -532,7 +597,7 @@
     menuBtn.addEventListener('click', () => {
       mobileMenu.classList.toggle('hidden');
     });
-    document.querySelectorAll('#mobile-menu a').forEach(link => {
+    document.querySelectorAll('#mobile-menu a[href^="#"]').forEach(link => {
       link.addEventListener('click', () => {
         mobileMenu.classList.add('hidden');
       });
@@ -540,15 +605,23 @@
 
     // Theme toggle
     const themeToggle = document.getElementById('theme-toggle');
-    themeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('light-mode');
-      themeToggle.textContent = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
-      localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-    });
-    if (localStorage.getItem('theme') === 'light') {
-      document.body.classList.add('light-mode');
-      themeToggle.textContent = '🌙';
+    function applyStoredTheme() {
+      const storedTheme = localStorage.getItem('theme');
+      if (storedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        themeToggle.textContent = '🌙';
+      } else {
+        document.body.classList.remove('light-mode');
+        themeToggle.textContent = '☀️';
+      }
     }
+    applyStoredTheme();
+
+    themeToggle.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light-mode');
+      themeToggle.textContent = isLight ? '🌙' : '☀️';
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    });
 
     // Particles.js
     particlesJS('particles-js', {
@@ -563,8 +636,18 @@
       },
       interactivity: {
         detect_on: 'canvas',
-        events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' }, resize: true },
-        modes: { grab: { distance: 400, line_linked: { opacity: 1 } }, bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 }, repulse: { distance: 100, duration: 0.4 }, push: { particles_nb: 4 }, remove: { particles_nb: 2 } }
+        events: {
+          onhover: { enable: true, mode: 'repulse' },
+          onclick: { enable: true, mode: 'push' },
+          resize: true
+        },
+        modes: {
+          grab: { distance: 400, line_linked: { opacity: 1 } },
+          bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
+          repulse: { distance: 100, duration: 0.4 },
+          push: { particles_nb: 4 },
+          remove: { particles_nb: 2 }
+        }
       },
       retina_detect: true
     });
@@ -585,7 +668,10 @@
       button.addEventListener('click', () => {
         const filter = button.getAttribute('data-filter');
         projectCards.forEach(card => {
-          card.style.display = filter === 'all' || card.getAttribute('data-category') === filter ? 'block' : 'none';
+          card.style.display =
+            filter === 'all' || card.getAttribute('data-category') === filter
+              ? 'block'
+              : 'none';
         });
       });
     });
@@ -593,12 +679,13 @@
     // Contact form validation and submission
     const contactForm = document.getElementById('contact-form');
     const formMessage = document.getElementById('form-message');
+
     contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('name').value.trim();
       const email = document.getElementById('email').value.trim();
       const message = document.getElementById('message').value.trim();
-      
+
       if (name && email && message && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         try {
           const formData = new FormData(contactForm);
@@ -628,15 +715,15 @@
       setTimeout(() => formMessage.classList.add('hidden'), 5000);
     });
 
-    // Translation handling
+    // Translation handling for both desktop and mobile dropdowns
     document.querySelectorAll('.translate-dropdown-content a, #mobile-menu a[data-lang]').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        const lang = e.target.getAttribute('data-lang');
-        const translateSelect = document.querySelector('#google_translate_element select');
-        if (translateSelect) {
-          translateSelect.value = lang;
-          translateSelect.dispatchEvent(new Event('change'));
+        const lang = e.currentTarget.getAttribute('data-lang');
+        if (lang) {
+          triggerTranslation(lang);
+        } else {
+          console.error('No data-lang attribute found on link');
         }
       });
     });
