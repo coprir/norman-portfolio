@@ -2,44 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Norman Kipkorir Ngetich | Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Norman Kipkorir Ngetich — IT Professional &amp; Full-Stack Developer</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="Norman Kipkorir Ngetich — IT professional and full-stack developer based in Nicosia, Cyprus. Building web, mobile and AI products. MBA candidate at the University of Nicosia.">
+  <meta name="author" content="Norman Kipkorir Ngetich">
 
-  <!-- AOS Animations -->
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 
-  <!-- Typed.js -->
-  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-  <!-- Particles.js -->
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Google Translate -->
-  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-  <!-- Meta tags -->
-  <meta name="description" content="Norman Kipkorir - IT Professional & Systems Administrator | MBA Candidate at University of Nicosia | Multilingual Portfolio">
-  <meta name="keywords" content="IT professional, systems administrator, Norman Kipkorir, portfolio, resume, Greek, German, Russian, Spanish, French">
-  <meta name="author" content="Norman Kipkorir">
-
-  <!-- Schema.org Person -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Person",
       "name": "Norman Kipkorir Ngetich",
-      "jobTitle": "IT Professional & Systems Administrator",
-      "url": "https://normankipkorir.github.io/portfolio",
+      "jobTitle": "IT Professional & Full-Stack Developer",
       "sameAs": [
         "https://www.linkedin.com/in/normankipkorirlink",
-        "https://github.com/normankipkorir"
+        "https://github.com/coprir"
       ],
       "address": {
         "@type": "PostalAddress",
@@ -50,683 +33,307 @@
       "telephone": "+35794418735"
     }
   </script>
-
-  <style>
-    body {
-      background-color: #0a0f2c;
-      color: white;
-      padding-top: 4rem;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    /* Light mode styles */
-    body.light-mode {
-      background-color: #f3f4f6;
-      color: #1f2937;
-    }
-
-    body.light-mode nav {
-      background-color: #ffffff;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    body.light-mode .text-gray-300 {
-      color: #4b5563;
-    }
-
-    body.light-mode .text-blue-300 {
-      color: #2563eb;
-    }
-
-    body.light-mode .border-blue-500 {
-      border-color: #2563eb;
-    }
-
-    body.light-mode a.text-blue-400 {
-      color: #1d4ed8;
-    }
-
-    body.light-mode .text-gray-400 {
-      color: #6b7280;
-    }
-
-    body.light-mode .text-gray-500 {
-      color: #9ca3af;
-    }
-
-    body.light-mode .logo-name {
-      color: #1f2937 !important;
-    }
-
-    section {
-      scroll-margin-top: 5rem;
-    }
-
-    #particles-js {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      transition: opacity 0.3s;
-    }
-
-    body.light-mode #particles-js {
-      opacity: 0.2;
-    }
-
-    .main-content {
-      position: relative;
-      z-index: 10;
-    }
-
-    .progress-bar {
-      height: 10px;
-      background-color: #4b5563;
-      border-radius: 5px;
-      overflow: hidden;
-    }
-
-    .progress {
-      height: 100%;
-      background-color: #60a5fa;
-      transition: width 1.5s ease-in-out;
-    }
-
-    body.light-mode .progress-bar {
-      background-color: #d1d5db;
-    }
-
-    body.light-mode .progress {
-      background-color: #2563eb;
-    }
-
-    .parallax {
-      background: url('https://source.unsplash.com/random/1920x1080/?tech') no-repeat center;
-      background-size: cover;
-      background-attachment: fixed;
-      padding: 4rem 0;
-    }
-
-    #back-to-top {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #60a5fa;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 50%;
-      display: none;
-      z-index: 100;
-      transition: background-color 0.3s;
-    }
-
-    body.light-mode #back-to-top {
-      background-color: #2563eb;
-    }
-
-    .project-card {
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .project-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .linkedin-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background-color: #0a66c2;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.375rem;
-      transition: background-color 0.3s;
-    }
-
-    .linkedin-btn:hover {
-      background-color: #094a8f;
-    }
-
-    body.light-mode .linkedin-btn {
-      background-color: #0a66c2;
-    }
-
-    body.light-mode .linkedin-btn:hover {
-      background-color: #094a8f;
-    }
-
-    .translate-dropdown {
-      position: relative;
-    }
-
-    .translate-dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #1f2937;
-      min-width: 60px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      z-index: 1;
-      border-radius: 0.375rem;
-      right: 0;
-    }
-
-    body.light-mode .translate-dropdown-content {
-      background-color: #ffffff;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    }
-
-    .translate-dropdown-content a {
-      color: white;
-      padding: 8px 16px;
-      text-decoration: none;
-      display: block;
-      transition: background-color 0.3s;
-      text-align: center;
-    }
-
-    body.light-mode .translate-dropdown-content a {
-      color: #1f2937;
-    }
-
-    .translate-dropdown-content a:hover {
-      background-color: #2563eb;
-      color: white;
-    }
-
-    .translate-dropdown:hover .translate-dropdown-content {
-      display: block;
-    }
-
-    /* Hide Google Translate branding and iframes */
-    #google_translate_element {
-      display: none;
-    }
-
-    .goog-te-banner-frame, .goog-logo-link, .goog-te-gadget img {
-      display: none !important;
-    }
-  </style>
 </head>
-<body class="bg-[#0a0f2c] text-white font-sans">
-  <!-- Particles background -->
-  <div id="particles-js"></div>
+<body>
 
-  <!-- Navbar -->
-  <nav class="bg-[#0a0f2c] shadow-md fixed top-0 left-0 right-0 z-50">
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="flex justify-between items-center py-4">
-        <div class="text-white font-bold text-xl logo-name">Norman Ngetich</div>
+  <!-- Header -->
+  <header class="site-header">
+    <a href="#top" class="brand">Norman Kipkorir<span class="brand-dot">.</span></a>
+    <nav class="site-nav" id="site-nav">
+      <a href="#work">Work</a>
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </header>
 
-        <ul class="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
-          <li><a href="#about" class="hover:text-blue-400 transition">About</a></li>
-          <li><a href="#experience" class="hover:text-blue-400 transition">Experience</a></li>
-          <li><a href="#projects" class="hover:text-blue-400 transition">Projects</a></li>
-          <li><a href="#education" class="hover:text-blue-400 transition">Education</a></li>
-          <li><a href="#skills" class="hover:text-blue-400 transition">Skills</a></li>
-          <li><a href="#contact" class="hover:text-blue-400 transition">Contact</a></li>
+  <!-- Mobile overlay menu -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#experience">Experience</a>
+    <a href="#contact">Contact</a>
+  </div>
 
-          <li class="translate-dropdown">
-            <a href="#" class="hover:text-blue-400 transition">🌐</a>
-            <div class="translate-dropdown-content">
-              <a href="#" data-lang="el" title="Greek">🇬🇷</a>
-              <a href="#" data-lang="de" title="German">🇩🇪</a>
-              <a href="#" data-lang="ru" title="Russian">🇷🇺</a>
-              <a href="#" data-lang="es" title="Spanish">🇪🇸</a>
-              <a href="#" data-lang="fr" title="French">🇫🇷</a>
-            </div>
-          </li>
-        </ul>
+  <main id="top">
 
-        <div class="flex items-center space-x-4">
-          <button id="theme-toggle" class="text-white focus:outline-none" title="Toggle Theme">☀️</button>
-          <button id="menu-btn" aria-controls="mobile-menu" aria-expanded="false" class="md:hidden text-white focus:outline-none">☰</button>
-        </div>
+    <!-- Hero -->
+    <section class="hero">
+      <p class="hero-kicker reveal">Nicosia, Cyprus — IT Professional &amp; Full-Stack Developer</p>
+      <h1 class="hero-title">
+        <span class="line reveal">Building digital</span>
+        <span class="line reveal"><em>products</em> across</span>
+        <span class="line reveal">web, mobile &amp; AI<span class="accent">.</span></span>
+      </h1>
+      <div class="hero-foot reveal">
+        <p class="hero-sub">From fintech platforms to AI-powered SaaS —<br>designed, engineered and shipped end to end.</p>
+        <a href="#work" class="scroll-cue" aria-label="Scroll to work">
+          Scroll down
+          <svg width="12" height="40" viewBox="0 0 12 40" fill="none"><path d="M6 0v36m0 0l5-5M6 36l-5-5" stroke="currentColor" stroke-width="1.2"/></svg>
+        </a>
       </div>
+    </section>
 
-      <!-- Mobile menu -->
-      <div id="mobile-menu" class="hidden md:hidden pb-4 text-gray-300 text-sm font-medium">
-        <ul class="space-y-2">
-          <li><a href="#about" class="block hover:text-blue-400 transition pl-1">About</a></li>
-          <li><a href="#experience" class="block hover:text-blue-400 transition pl-1">Experience</a></li>
-          <li><a href="#projects" class="block hover:text-blue-400 transition pl-1">Projects</a></li>
-          <li><a href="#education" class="block hover:text-blue-400 transition pl-1">Education</a></li>
-          <li><a href="#skills" class="block hover:text-blue-400 transition pl-1">Skills</a></li>
-          <li><a href="#contact" class="block hover:text-blue-400 transition pl-1">Contact</a></li>
-          <li>
-            <a href="#" class="block hover:text-blue-400 transition pl-1">🌐</a>
-            <div class="pl-4 space-y-2">
-              <a href="#" data-lang="el" class="block hover:text-blue-400 transition" title="Greek">🇬🇷</a>
-              <a href="#" data-lang="de" class="block hover:text-blue-400 transition" title="German">🇩🇪</a>
-              <a href="#" data-lang="ru" class="block hover:text-blue-400 transition" title="Russian">🇷🇺</a>
-              <a href="#" data-lang="es" class="block hover:text-blue-400 transition" title="Spanish">🇪🇸</a>
-              <a href="#" data-lang="fr" class="block hover:text-blue-400 transition" title="French">🇫🇷</a>
-            </div>
-          </li>
-        </ul>
+    <!-- Marquee -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Next.js — React Native — TypeScript — Python — Supabase — Stripe — AI / RAG — Systems Administration — </span>
+        <span>Next.js — React Native — TypeScript — Python — Supabase — Stripe — AI / RAG — Systems Administration — </span>
       </div>
     </div>
-  </nav>
 
-  <!-- Back to top -->
-  <button id="back-to-top" class="text-sm">↑</button>
-
-  <!-- Google Translate container (hidden via CSS) -->
-  <div id="google_translate_element"></div>
-
-  <!-- Main content -->
-  <div class="main-content max-w-4xl mx-auto px-6 py-10">
-    <header class="text-center py-10 mt-20" data-aos="fade-up">
-      <h1 class="text-4xl font-bold mb-2">NORMAN KIPKORIR NGETICH</h1>
-      <p class="text-blue-300 text-xl"><span id="typed"></span></p>
-      <div class="mt-4 text-sm text-gray-400">
-        Cyprus | <a href="mailto:nawmankipkorir@gmail.com" class="text-blue-400">nawmankipkorir@gmail.com</a> | +35794418735
+    <!-- Work -->
+    <section id="work" class="work">
+      <div class="section-head reveal">
+        <h2>Selected work</h2>
+        <p class="count">(10)</p>
       </div>
-    </header>
+
+      <ul class="project-list">
+
+        <li class="project reveal">
+          <a class="project-row" href="https://github.com/coprir/ai-immigration-assistant" target="_blank" rel="noopener noreferrer">
+            <span class="p-index">01</span>
+            <span class="p-main">
+              <span class="p-title">VisaPilot</span>
+              <span class="p-desc">AI-powered visa &amp; immigration assistant for Cyprus — RAG chat, eligibility checker, document analyzer, smart checklists and a lawyer marketplace.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">AI SaaS</span>
+              <span class="p-year">2026</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="project reveal">
+          <a class="project-row" href="https://github.com/coprir/lokask" target="_blank" rel="noopener noreferrer">
+            <span class="p-index">02</span>
+            <span class="p-main">
+              <span class="p-title">Lokask</span>
+              <span class="p-desc">Full-stack service marketplace connecting customers with local providers — React Native app, Next.js admin, Express backend, Stripe Connect payments.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Marketplace</span>
+              <span class="p-year">2026</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="project reveal">
+          <div class="project-row">
+            <span class="p-index">03</span>
+            <span class="p-main">
+              <span class="p-title">Copriv</span>
+              <span class="p-desc">Kenya's premier stock trading &amp; investment platform for the Nairobi Securities Exchange — full-stack web and mobile trading experience.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Fintech</span>
+              <span class="p-year">2026</span>
+            </span>
+          </div>
+        </li>
+
+        <li class="project reveal">
+          <a class="project-row" href="https://github.com/coprir/BKCY" target="_blank" rel="noopener noreferrer">
+            <span class="p-index">04</span>
+            <span class="p-main">
+              <span class="p-title">BKCY</span>
+              <span class="p-desc">Internal staff-management mobile app for restaurant operations — React Native + Expo with Supabase auth, storage and push notifications.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Mobile App</span>
+              <span class="p-year">2026</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="project reveal">
+          <div class="project-row">
+            <span class="p-index">05</span>
+            <span class="p-main">
+              <span class="p-title">Your Travel Companion</span>
+              <span class="p-desc">Travel-planning web application that helps travellers organise trips, itineraries and bookings in one place.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Web App</span>
+              <span class="p-year">2026</span>
+            </span>
+          </div>
+        </li>
+
+        <li class="project reveal">
+          <div class="project-row">
+            <span class="p-index">06</span>
+            <span class="p-main">
+              <span class="p-title">Kurgat Advocates</span>
+              <span class="p-desc">Modern web presence for a law practice — clean, content-first site built with TypeScript and React.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Corporate</span>
+              <span class="p-year">2026</span>
+            </span>
+          </div>
+        </li>
+
+        <li class="project reveal">
+          <a class="project-row" href="https://github.com/coprir/Thriftmartt" target="_blank" rel="noopener noreferrer">
+            <span class="p-index">07</span>
+            <span class="p-main">
+              <span class="p-title">Thriftmartt</span>
+              <span class="p-desc">Online thrift marketplace for buying and selling pre-loved items.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">E-Commerce</span>
+              <span class="p-year">2025</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="project reveal">
+          <a class="project-row" href="https://github.com/coprir/weather-app" target="_blank" rel="noopener noreferrer">
+            <span class="p-index">08</span>
+            <span class="p-main">
+              <span class="p-title">Weather App</span>
+              <span class="p-desc">Python desktop application fetching real-time data from OpenWeatherMap, with 5-hour temperature trends visualised in Matplotlib.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Desktop</span>
+              <span class="p-year">2025</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="project reveal">
+          <a class="project-row" href="https://github.com/coprir/Afrostocks" target="_blank" rel="noopener noreferrer">
+            <span class="p-index">09</span>
+            <span class="p-main">
+              <span class="p-title">Afrostocks</span>
+              <span class="p-desc">Stock-market web app focused on African exchanges — market data and watchlists in the browser.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Fintech</span>
+              <span class="p-year">2025</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="project reveal">
+          <a class="project-row" href="https://github.com/coprir/InAppReview" target="_blank" rel="noopener noreferrer">
+            <span class="p-index">10</span>
+            <span class="p-main">
+              <span class="p-title">InAppReview</span>
+              <span class="p-desc">Android implementation of Google's in-app review API — Play Store ratings without leaving the application.</span>
+            </span>
+            <span class="p-meta">
+              <span class="p-tag">Android</span>
+              <span class="p-year">2021</span>
+            </span>
+          </a>
+        </li>
+
+      </ul>
+    </section>
 
     <!-- About -->
-    <section id="about" class="mb-10" data-aos="fade-up">
-      <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">About Me</h2>
-      <p class="leading-relaxed text-gray-300">
-        Information Technology (IT) professional with expertise in remote systems administration and infrastructure management.
-        Proven track record in managing enterprise-level systems, implementing automation solutions, and maintaining high system availability in large academic environments.
-        Currently pursuing an MBA at the University of Nicosia to enhance business acumen alongside technical expertise.
-      </p>
+    <section id="about" class="about">
+      <div class="section-head reveal">
+        <h2>About</h2>
+      </div>
+      <div class="about-grid">
+        <p class="about-lead reveal">
+          I'm an IT professional turned product builder. I spent years keeping
+          enterprise systems running — remote administration, automation,
+          infrastructure — and now I design and ship full-stack products of my own.
+        </p>
+        <div class="about-side reveal">
+          <p>
+            Currently pursuing an MBA in Entrepreneurship &amp; Digital Transformation
+            at the University of Nicosia, Cyprus, pairing business strategy with
+            hands-on engineering across web, mobile and AI.
+          </p>
+          <ul class="about-facts">
+            <li><span>Based in</span>Nicosia, Cyprus</li>
+            <li><span>Focus</span>Web · Mobile · AI · Fintech</li>
+            <li><span>Stack</span>TypeScript, Next.js, React Native, Python, Supabase</li>
+            <li><span>Education</span>BSc IT (Kabarak) · MBA candidate (UNIC, 2026)</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
     <!-- Experience -->
-    <section id="experience" class="mb-10" data-aos="fade-up">
-      <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Work Experience</h2>
-
-      <div class="mb-6">
-        <h3 class="text-xl font-bold">Crew Member</h3>
-        <p class="text-sm text-gray-400">Burger King Acropolis | November 2025 – Present</p>
-        <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
-          <li>Started working at Burger King Acropolis as a crew member.</li>
-          <li>Assisting with food preparation, customer service, and maintaining cleanliness standards.</li>
-          <li>Operating kitchen equipment and preparing menu items according to company standards.</li>
-          <li>Restocking supplies and ingredients to ensure smooth workflow during shifts.</li>
-          <li>Collaborating with team members to deliver fast and friendly service.</li>
-          <li>Following health, safety, and hygiene protocols at all times.</li>
-        </ul>
+    <section id="experience" class="experience">
+      <div class="section-head reveal">
+        <h2>Experience</h2>
       </div>
-
-      <div class="mb-6">
-        <h3 class="text-xl font-bold">IT Support Technician</h3>
-        <p class="text-sm text-gray-400">The Eldoret National Polytechnic | February 2023 - September 2024</p>
-        <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
-          <li>Provided technical support and assistance to students and staff both on-site and remotely.</li>
-          <li>Implemented and maintained remote access solutions for staff and faculty working off-campus.</li>
-          <li>Managed automated system maintenance procedures using PowerShell and Bash scripting.</li>
-          <li>Maintained network infrastructure and provided LAN/WAN support.</li>
-          <li>Monitored system performance and network stability.</li>
-          <li>Administered software deployment and configuration across multiple campus locations.</li>
-          <li>Managed security protocols and access control systems.</li>
-          <li>Conducted remote troubleshooting sessions for staff and faculty.</li>
-          <li>Maintained detailed documentation of hardware, software, and network configurations.</li>
-          <li>Managed IT inventory and equipment lifecycle.</li>
-        </ul>
-      </div>
-
-      <div class="mb-6">
-        <h3 class="text-xl font-bold">Systems Support Technician</h3>
-        <p class="text-sm text-gray-400">SACCO Societies Regulatory Authority | August 2022 - December 2022</p>
-        <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
-          <li>Implemented automated system deployment procedures.</li>
-          <li>Configured and maintained monitoring systems.</li>
-          <li>Assisted in cloud infrastructure management.</li>
-          <li>Developed technical documentation and standard operating procedures.</li>
-        </ul>
-      </div>
-
-      <div>
-        <h3 class="text-xl font-bold">Part-Time Kitchen Assistant</h3>
-        <p class="text-sm text-gray-400">Bandaptai Hotel | June 2018 - February 2020</p>
-        <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
-          <li>Assisted in food preparation and kitchen operations serving 100+ customers daily.</li>
-          <li>Maintained high standards of cleanliness and food safety protocols.</li>
-          <li>Handled multiple tasks simultaneously during peak service hours.</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Projects -->
-    <section id="projects" class="mb-10 parallax" data-aos="fade-up">
-      <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Projects</h2>
-      <div class="flex justify-center space-x-4 mb-4">
-        <button class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-filter="all">All</button>
-        <button class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-filter="web">Web</button>
-        <button class="filter-btn bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" data-filter="automation">Automation</button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 project-container">
-        <div class="project-card bg-gray-800 p-4 rounded-lg" data-category="web">
-          <h3 class="text-lg font-bold">Portfolio Website</h3>
-          <p class="text-gray-300">A responsive portfolio with particle effects and animations.</p>
-        </div>
-        <div class="project-card bg-gray-800 p-4 rounded-lg" data-category="automation">
-          <h3 class="text-lg font-bold">System Automation Script</h3>
-          <p class="text-gray-300">PowerShell script for automated server maintenance.</p>
-        </div>
-        <div class="project-card bg-gray-800 p-4 rounded-lg" data-category="web">
-          <h3 class="text-lg font-bold">Web Monitoring Dashboard</h3>
-          <p class="text-gray-300">A dashboard for real-time system monitoring using Zabbix.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Education -->
-    <section id="education" class="mb-10" data-aos="fade-up">
-      <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Education</h2>
-      <div class="mb-6">
-        <h3 class="text-xl font-bold">MBA in Entrepreneurship & Digital Transformation</h3>
-        <p class="text-sm text-gray-400">University of Nicosia, Cyprus | September 2024 – Present</p>
-        <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
-          <li>Focus on digital business transformation and technology management.</li>
-          <li>Expected completion: June 2026</li>
-        </ul>
-      </div>
-      <div class="mb-6">
-        <h3 class="text-xl font-bold">Bachelor of Science in Information Technology</h3>
-        <p class="text-sm text-gray-400">Kabarak University | May 2018 – December 2022</p>
-        <ul class="list-disc ml-5 mt-2 space-y-1 text-gray-300">
-          <li>Second Class, Upper Division</li>
-        </ul>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold">Certificate in Android and Web Development Systems</h3>
-        <p class="text-sm text-gray-400">E-mobilis Institute | January 2018 – April 2018</p>
-      </div>
-    </section>
-
-    <!-- Skills -->
-    <section id="skills" class="mb-10" data-aos="fade-up">
-      <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Technical Skills</h2>
-      <ul class="space-y-4 text-gray-300">
-        <li>
-          <span>Linux Administration</span>
-          <div class="progress-bar"><div class="progress" style="width: 90%;"></div></div>
+      <ul class="xp-list">
+        <li class="xp reveal">
+          <span class="xp-period">2023 — 2024</span>
+          <span class="xp-role">IT Support Technician</span>
+          <span class="xp-org">The Eldoret National Polytechnic</span>
+          <span class="xp-note">Remote access solutions, PowerShell/Bash automation, LAN/WAN support and multi-campus software deployment for a large academic environment.</span>
         </li>
-        <li>
-          <span>Windows Server</span>
-          <div class="progress-bar"><div class="progress" style="width: 85%;"></div></div>
+        <li class="xp reveal">
+          <span class="xp-period">2022</span>
+          <span class="xp-role">Systems Support Technician</span>
+          <span class="xp-org">SACCO Societies Regulatory Authority</span>
+          <span class="xp-note">Automated system deployment, monitoring configuration and cloud infrastructure support for a national financial regulator.</span>
         </li>
-        <li>
-          <span>AWS/Azure</span>
-          <div class="progress-bar"><div class="progress" style="width: 80%;"></div></div>
-        </li>
-        <li>
-          <span>PowerShell/Bash</span>
-          <div class="progress-bar"><div class="progress" style="width: 75%;"></div></div>
-        </li>
-        <li>
-          <span>Nagios/Zabbix</span>
-          <div class="progress-bar"><div class="progress" style="width: 70%;"></div></div>
-        </li>
-        <li>
-          <span>VMware/Hyper-V</span>
-          <div class="progress-bar"><div class="progress" style="width: 65%;"></div></div>
+        <li class="xp reveal">
+          <span class="xp-period">2025 — Present</span>
+          <span class="xp-role">Crew Member</span>
+          <span class="xp-org">Burger King Acropolis, Nicosia</span>
+          <span class="xp-note">Part-time alongside MBA studies — and the inspiration for BKCY, the staff-management app above.</span>
         </li>
       </ul>
     </section>
 
     <!-- Contact -->
-    <section id="contact" class="mb-10" data-aos="fade-up">
-      <h2 class="text-2xl font-semibold mb-4 border-b border-blue-500 pb-2">Contact Me</h2>
-      <p class="text-gray-300 mb-4">Please feel free to reach out for opportunities or collaboration.</p>
-      <form id="contact-form" action="https://formspree.io/f/mblywwoo" method="POST" class="space-y-4">
-        <input type="hidden" name="_subject" value="New Contact Form Submission">
-        <div>
-          <label for="name" class="block text-sm text-gray-300">Name</label>
-          <input type="text" id="name" name="name" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-blue-500" required aria-label="Your Name">
+    <section id="contact" class="contact">
+      <h2 class="contact-title">
+        <span class="line reveal">Let's build</span>
+        <span class="line reveal"><em>something</em> together<span class="accent">.</span></span>
+      </h2>
+      <div class="contact-grid reveal">
+        <form id="contact-form" action="https://formspree.io/f/mblywwoo" method="POST">
+          <input type="hidden" name="_subject" value="New Portfolio Contact">
+          <div class="field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="4" required></textarea>
+          </div>
+          <button type="submit" class="submit-btn">Send message<span class="btn-arrow">→</span></button>
+          <p id="form-message" class="form-message" role="status"></p>
+        </form>
+        <div class="contact-info">
+          <a href="mailto:nawmankipkorir@gmail.com" class="contact-mail">nawmankipkorir@gmail.com</a>
+          <p>+357 9441 8735<br>Nicosia, Cyprus</p>
+          <div class="socials">
+            <a href="https://github.com/coprir" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/normankipkorirlink" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          </div>
         </div>
-        <div>
-          <label for="email" class="block text-sm text-gray-300">Email</label>
-          <input type="email" id="email" name="email" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-blue-500" required aria-label="Your Email">
-        </div>
-        <div>
-          <label for="message" class="block text-sm text-gray-300">Message</label>
-          <textarea id="message" name="message" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-blue-500" rows="4" required aria-label="Your Message"></textarea>
-        </div>
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Send Message</button>
-      </form>
-      <p id="form-message" class="text-gray-300 mt-2 hidden"></p>
-      <ul class="mt-4 list-disc ml-5 text-gray-300">
-        <li>Email: <a href="mailto:nawmankipkorir@gmail.com" class="text-blue-400 underline">nawmankipkorir@gmail.com</a></li>
-        <li>Phone: +357 9441 8735</li>
-        <li>
-          <a href="https://www.linkedin.com/in/normankipkorirlink" target="_blank" rel="noopener noreferrer" class="linkedin-btn">
-            <i class="fab fa-linkedin"></i> Connect on LinkedIn
-          </a>
-        </li>
-      </ul>
+      </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="text-center py-10 text-gray-500" data-aos="fade-up">
-      © 2025 Norman Ngetich. All rights reserved.
-    </footer>
-  </div>
+  </main>
 
-  <script>
-    // Initialize Google Translate
-    function googleTranslateElementInit() {
-      if (typeof google !== 'undefined' && google.translate) {
-        new google.translate.TranslateElement({
-          pageLanguage: 'en',
-          includedLanguages: 'el,de,ru,es,fr',
-          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-          autoDisplay: false
-        }, 'google_translate_element');
-        console.log('Google Translate initialized successfully');
-      } else {
-        console.error('Google Translate API not loaded. Retrying in 1 second...');
-        setTimeout(googleTranslateElementInit, 1000);
-      }
-    }
+  <footer class="site-footer">
+    <p>© <span id="year">2026</span> Norman Kipkorir Ngetich</p>
+    <p class="footer-time"><span id="local-time"></span> — Nicosia</p>
+    <a href="#top" class="back-top">Back to top ↑</a>
+  </footer>
 
-    // Function to trigger translation with MutationObserver
-    function triggerTranslation(lang) {
-      const translateSelect = document.querySelector('#google_translate_element select');
-      if (translateSelect) {
-        translateSelect.value = lang;
-        translateSelect.dispatchEvent(new Event('change', { bubbles: true }));
-        console.log(`Translation triggered for language: ${lang}`);
-        return;
-      }
-
-      const targetNode = document.getElementById('google_translate_element');
-      if (!targetNode) return;
-
-      const observer = new MutationObserver((mutations, obs) => {
-        const select = document.querySelector('#google_translate_element select');
-        if (select) {
-          select.value = lang;
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          console.log(`Translation triggered for language: ${lang} via MutationObserver`);
-          obs.disconnect();
-        }
-      });
-
-      observer.observe(targetNode, {
-        childList: true,
-        subtree: true
-      });
-
-      setTimeout(() => {
-        observer.disconnect();
-        if (!document.querySelector('#google_translate_element select')) {
-          console.error('Failed to find translate element after 10 seconds');
-          alert('Translation failed. Please try again later or contact support.');
-        }
-      }, 10000);
-    }
-
-    // Initialize AOS
-    AOS.init({ duration: 1000, once: true });
-
-    // Typed.js for typing animation
-    const typed = new Typed('#typed', {
-      strings: ['IT Professional', 'Systems Administrator', 'MBA Candidate'],
-      typeSpeed: 50,
-      backSpeed: 30,
-      backDelay: 2000,
-      loop: true
-    });
-
-    // Smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function(e) {
-        const targetId = this.getAttribute('href');
-        if (!targetId || targetId === '#') return;
-        const targetElement = document.querySelector(targetId);
-        if (targetElement) {
-          e.preventDefault();
-          window.scrollTo({
-            top: targetElement.offsetTop - 60,
-            behavior: 'smooth'
-          });
-        }
-      });
-    });
-
-    // Mobile menu toggle
-    const menuBtn = document.getElementById('menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    menuBtn.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
-    });
-    document.querySelectorAll('#mobile-menu a[href^="#"]').forEach(link => {
-      link.addEventListener('click', () => {
-        mobileMenu.classList.add('hidden');
-      });
-    });
-
-    // Theme toggle
-    const themeToggle = document.getElementById('theme-toggle');
-    function applyStoredTheme() {
-      const storedTheme = localStorage.getItem('theme');
-      if (storedTheme === 'light') {
-        document.body.classList.add('light-mode');
-        themeToggle.textContent = '🌙';
-      } else {
-        document.body.classList.remove('light-mode');
-        themeToggle.textContent = '☀️';
-      }
-    }
-    applyStoredTheme();
-
-    themeToggle.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('light-mode');
-      themeToggle.textContent = isLight ? '🌙' : '☀️';
-      localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    });
-
-    // Particles.js
-    particlesJS('particles-js', {
-      particles: {
-        number: { value: 80, density: { enable: true, value_area: 800 } },
-        color: { value: '#60a5fa' },
-        shape: { type: 'circle', stroke: { width: 0, color: '#000000' } },
-        opacity: { value: 0.5, random: false },
-        size: { value: 3, random: true },
-        line_linked: { enable: true, distance: 150, color: '#60a5fa', opacity: 0.4, width: 1 },
-        move: { enable: true, speed: 2, direction: 'none', random: false, straight: false, out_mode: 'out', bounce: false }
-      },
-      interactivity: {
-        detect_on: 'canvas',
-        events: {
-          onhover: { enable: true, mode: 'repulse' },
-          onclick: { enable: true, mode: 'push' },
-          resize: true
-        },
-        modes: {
-          grab: { distance: 400, line_linked: { opacity: 1 } },
-          bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 },
-          repulse: { distance: 100, duration: 0.4 },
-          push: { particles_nb: 4 },
-          remove: { particles_nb: 2 }
-        }
-      },
-      retina_detect: true
-    });
-
-    // Back-to-top button
-    const backToTop = document.getElementById('back-to-top');
-    window.addEventListener('scroll', () => {
-      backToTop.style.display = window.scrollY > 300 ? 'block' : 'none';
-    });
-    backToTop.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Project filter
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    const projectCards = document.querySelectorAll('.project-card');
-    filterButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const filter = button.getAttribute('data-filter');
-        projectCards.forEach(card => {
-          card.style.display =
-            filter === 'all' || card.getAttribute('data-category') === filter
-              ? 'block'
-              : 'none';
-        });
-      });
-    });
-
-    // Contact form validation and submission
-    const contactForm = document.getElementById('contact-form');
-    const formMessage = document.getElementById('form-message');
-
-    contactForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const message = document.getElementById('message').value.trim();
-
-      if (name && email && message && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        try {
-          const formData = new FormData(contactForm);
-          const response = await fetch(contactForm.action, {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' }
-          });
-          if (response.ok) {
-            formMessage.textContent = 'Message sent successfully! I will get back to you soon.';
-            formMessage.classList.remove('hidden', 'text-red-500');
-            formMessage.classList.add('text-green-500');
-            contactForm.reset();
-          } else {
-            throw new Error('Form submission failed');
-          }
-        } catch (error) {
-          formMessage.textContent = 'Error sending message. Please try again later.';
-          formMessage.classList.remove('hidden', 'text-green-500');
-          formMessage.classList.add('text-red-500');
-        }
-      } else {
-        formMessage.textContent = 'Please fill out all fields correctly.';
-        formMessage.classList.remove('hidden', 'text-green-500');
-        formMessage.classList.add('text-red-500');
-      }
-      setTimeout(() => formMessage.classList.add('hidden'), 5000);
-    });
-
-    // Translation handling for both desktop and mobile dropdowns
-    document.querySelectorAll('.translate-dropdown-content a, #mobile-menu a[data-lang]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const lang = e.currentTarget.getAttribute('data-lang');
-        if (lang) {
-          triggerTranslation(lang);
-        } else {
-          console.error('No data-lang attribute found on link');
-        }
-      });
-    });
-  </script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
