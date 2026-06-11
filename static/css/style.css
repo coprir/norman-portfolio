@@ -15,6 +15,15 @@
   --pad: clamp(1.25rem, 4vw, 4rem);
 }
 
+html.dark {
+  --bg: #131312;
+  --ink: #ebe9e4;
+  --ink-soft: #aaa8a1;
+  --ink-faint: #6d6b66;
+  --hairline: rgba(235, 233, 228, 0.16);
+  --accent: #e0703a;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { scroll-behavior: smooth; }
@@ -27,6 +36,47 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* ---------- Interactive background ---------- */
+
+#bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-img {
+  position: absolute;
+  inset: -6% 0;
+  background: url("../img/bg-typing.jpg") center / cover no-repeat;
+  filter: grayscale(1) contrast(1.05);
+  transform: translateY(var(--parallax, 0px));
+  will-change: transform, opacity;
+}
+
+/* Base layer: fades in as the visitor scrolls */
+.bg-base {
+  opacity: var(--bg-reveal, 0);
+  transition: opacity 0.3s linear;
+}
+
+/* Torch layer: revealed inside a soft circle that follows the cursor */
+.bg-torch {
+  opacity: 0.55;
+  -webkit-mask-image: radial-gradient(circle 240px at var(--mx, -500px) var(--my, -500px), #000 0%, transparent 72%);
+  mask-image: radial-gradient(circle 240px at var(--mx, -500px) var(--my, -500px), #000 0%, transparent 72%);
+}
+
+html.dark .bg-base { mix-blend-mode: lighten; }
+html.dark .bg-torch { opacity: 0.7; }
+
+/* No cursor on touch devices — keep only the scroll reveal */
+@media (hover: none) {
+  .bg-torch { display: none; }
 }
 
 ::selection { background: var(--ink); color: var(--bg); }
@@ -86,6 +136,25 @@ em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
   transform: scaleX(1);
   transform-origin: left;
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+}
+
+.theme-toggle {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.theme-toggle:hover { transform: rotate(180deg); }
 
 .menu-toggle {
   display: none;

@@ -1,6 +1,50 @@
 // Norman Kipkorir — Portfolio interactions
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Interactive background: torch follows cursor, image fades in on scroll
+  const bgLayer = document.getElementById("bg-layer");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (bgLayer && !reducedMotion) {
+    let targetX = -500, targetY = -500, x = targetX, y = targetY;
+    let raf = null;
+
+    const tick = () => {
+      x += (targetX - x) * 0.09;
+      y += (targetY - y) * 0.09;
+      bgLayer.style.setProperty("--mx", `${x.toFixed(1)}px`);
+      bgLayer.style.setProperty("--my", `${y.toFixed(1)}px`);
+      if (Math.abs(targetX - x) > 0.3 || Math.abs(targetY - y) > 0.3) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = null;
+      }
+    };
+
+    window.addEventListener("pointermove", (e) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      if (!raf) raf = requestAnimationFrame(tick);
+    }, { passive: true });
+
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = max > 0 ? window.scrollY / max : 0;
+      // Invisible at the very top, peaks mid-scroll, eases off near the footer
+      const reveal = Math.sin(Math.min(progress * 1.4, 1) * Math.PI) * 0.22;
+      bgLayer.style.setProperty("--bg-reveal", reveal.toFixed(3));
+      bgLayer.style.setProperty("--parallax", `${(progress * -60).toFixed(1)}px`);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+
+  // Dark mode toggle
+  const themeToggle = document.getElementById("theme-toggle");
+  themeToggle.addEventListener("click", () => {
+    const dark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  });
+
   // Scroll-reveal
   const revealEls = document.querySelectorAll(".reveal");
   const observer = new IntersectionObserver(

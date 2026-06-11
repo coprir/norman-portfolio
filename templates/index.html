@@ -14,6 +14,14 @@
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+  <script>
+    // Apply saved theme before first paint to avoid flash
+    if (localStorage.getItem("theme") === "dark" ||
+        (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    }
+  </script>
+
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -36,6 +44,12 @@
 </head>
 <body>
 
+  <!-- Interactive background -->
+  <div id="bg-layer" aria-hidden="true">
+    <div class="bg-img bg-base"></div>
+    <div class="bg-img bg-torch"></div>
+  </div>
+
   <!-- Header -->
   <header class="site-header">
     <a href="#top" class="brand">Norman Kipkorir<span class="brand-dot">.</span></a>
@@ -45,9 +59,17 @@
       <a href="#experience">Experience</a>
       <a href="#contact">Contact</a>
     </nav>
-    <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false">
-      <span></span><span></span>
-    </button>
+    <div class="header-actions">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span>
+      </button>
+    </div>
   </header>
 
   <!-- Mobile overlay menu -->
