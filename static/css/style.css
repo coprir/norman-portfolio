@@ -28,7 +28,7 @@ html.dark {
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   background: var(--bg);
@@ -62,23 +62,31 @@ body {
 
 /* Base layer: fades in as the visitor scrolls */
 .bg-base {
-  opacity: var(--bg-reveal, 0);
+  opacity: calc(var(--bg-reveal, 0) * var(--reveal-boost, 1));
   transition: opacity 0.3s linear;
 }
 
-/* Torch layer: revealed inside a soft circle that follows the cursor */
+/* Torch layer: revealed inside a soft circle that follows the
+   cursor (or finger on touch devices) */
 .bg-torch {
-  opacity: 0.55;
-  -webkit-mask-image: radial-gradient(circle 240px at var(--mx, -500px) var(--my, -500px), #000 0%, transparent 72%);
-  mask-image: radial-gradient(circle 240px at var(--mx, -500px) var(--my, -500px), #000 0%, transparent 72%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  -webkit-mask-image: radial-gradient(circle var(--torch-r, 240px) at var(--mx, -500px) var(--my, -500px), #000 0%, transparent 72%);
+  mask-image: radial-gradient(circle var(--torch-r, 240px) at var(--mx, -500px) var(--my, -500px), #000 0%, transparent 72%);
 }
 
-html.dark .bg-base { mix-blend-mode: lighten; }
-html.dark .bg-torch { opacity: 0.7; }
+#bg-layer.torch-on .bg-torch { opacity: 0.55; }
 
-/* No cursor on touch devices — keep only the scroll reveal */
+html.dark .bg-base { mix-blend-mode: lighten; }
+html.dark #bg-layer.torch-on .bg-torch { opacity: 0.7; }
+
+/* Touch devices: stronger scroll reveal, smaller torch around the finger */
 @media (hover: none) {
-  .bg-torch { display: none; }
+  #bg-layer { --reveal-boost: 1.6; --torch-r: 170px; }
+}
+
+@media (max-width: 600px) {
+  #bg-layer { --torch-r: 150px; }
 }
 
 ::selection { background: var(--accent-blue); color: #fff; }
@@ -152,7 +160,9 @@ em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
   color: inherit;
   display: flex;
   align-items: center;
-  padding: 4px;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
@@ -163,26 +173,26 @@ em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
   background: none;
   border: 0;
   cursor: pointer;
-  width: 34px;
-  height: 26px;
+  width: 44px;
+  height: 44px;
   position: relative;
   color: inherit;
 }
 
 .menu-toggle span {
   position: absolute;
-  left: 4px;
-  right: 4px;
+  left: 9px;
+  right: 9px;
   height: 1.5px;
   background: currentColor;
   transition: transform 0.3s ease, top 0.3s ease;
 }
 
-.menu-toggle span:nth-child(1) { top: 8px; }
-.menu-toggle span:nth-child(2) { top: 16px; }
+.menu-toggle span:nth-child(1) { top: 18px; }
+.menu-toggle span:nth-child(2) { top: 26px; }
 
-.menu-toggle.open span:nth-child(1) { top: 12px; transform: rotate(45deg); }
-.menu-toggle.open span:nth-child(2) { top: 12px; transform: rotate(-45deg); }
+.menu-toggle.open span:nth-child(1) { top: 22px; transform: rotate(45deg); }
+.menu-toggle.open span:nth-child(2) { top: 22px; transform: rotate(-45deg); }
 
 .mobile-menu {
   position: fixed;
@@ -212,6 +222,7 @@ em { font-family: var(--font-serif); font-style: italic; font-weight: 400; }
 /* ---------- Hero ---------- */
 
 .hero {
+  min-height: 100vh; /* fallback for browsers without svh */
   min-height: 100svh;
   display: flex;
   flex-direction: column;

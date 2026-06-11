@@ -20,11 +20,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
 
-    window.addEventListener("pointermove", (e) => {
+    let torchOffTimer = null;
+    const moveTorch = (e) => {
       targetX = e.clientX;
       targetY = e.clientY;
+      bgLayer.classList.add("torch-on");
       if (!raf) raf = requestAnimationFrame(tick);
-    }, { passive: true });
+      // On touch, fade the torch out shortly after the finger lifts
+      clearTimeout(torchOffTimer);
+      if (e.pointerType === "touch") {
+        torchOffTimer = setTimeout(() => bgLayer.classList.remove("torch-on"), 900);
+      }
+    };
+    window.addEventListener("pointermove", moveTorch, { passive: true });
+    window.addEventListener("pointerdown", moveTorch, { passive: true });
 
     const onScroll = () => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -38,28 +47,34 @@ document.addEventListener("DOMContentLoaded", () => {
     onScroll();
   }
 
-  // Dark mode toggle
+  // Dark mode toggle (also syncs the mobile browser chrome color)
   const themeToggle = document.getElementById("theme-toggle");
+  const themeColorMeta = document.getElementById("theme-color");
   themeToggle.addEventListener("click", () => {
     const dark = document.documentElement.classList.toggle("dark");
     localStorage.setItem("theme", dark ? "dark" : "light");
+    themeColorMeta.setAttribute("content", dark ? "#131312" : "#f4f2ee");
   });
 
-  // Scroll-reveal
+  // Scroll-reveal (shows everything immediately on very old browsers)
   const revealEls = document.querySelectorAll(".reveal");
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry, i) => {
-        if (entry.isIntersecting) {
-          entry.target.style.transitionDelay = `${(i % 4) * 80}ms`;
-          entry.target.classList.add("in");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.12 }
-  );
-  revealEls.forEach((el) => observer.observe(el));
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry, i) => {
+          if (entry.isIntersecting) {
+            entry.target.style.transitionDelay = `${(i % 4) * 80}ms`;
+            entry.target.classList.add("in");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+    revealEls.forEach((el) => observer.observe(el));
+  } else {
+    revealEls.forEach((el) => el.classList.add("in"));
+  }
 
   // Mobile menu
   const toggle = document.getElementById("menu-toggle");
