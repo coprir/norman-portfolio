@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { env } from "../env";
 import { KEY_PATTERN, type StorageDriver, type UploadedPart } from "./types";
@@ -103,6 +104,24 @@ export class LocalStorage implements StorageDriver {
 
   getBuffer(key: string) {
     return fs.readFile(this.objectPath(key));
+  }
+
+  async getStream(key: string, range?: { start: number; end: number }) {
+    await fs.access(this.objectPath(key));
+    return createReadStream(this.objectPath(key), range);
+  }
+
+  async putStream(key: string, body: Readable) {
+    const dest = this.objectPath(key);
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    const tmp = `${dest}.${randomBytes(6).toString("hex")}.writing`;
+    try {
+      await pipeline(body, createWriteStream(tmp));
+      await fs.rename(tmp, dest);
+    } catch (err) {
+      await fs.rm(tmp, { force: true });
+      throw err;
+    }
   }
 
   async put(key: string, body: Buffer) {

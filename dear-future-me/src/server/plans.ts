@@ -31,21 +31,26 @@ export async function getPlanForUser(userId: string): Promise<Plan> {
 }
 
 export async function getStorageUsed(userId: string): Promise<bigint> {
-  const agg = await db.memory.aggregate({ where: { userId }, _sum: { fileSize: true } });
-  return agg._sum.fileSize ?? BigInt(0);
+  // Vault memories plus everything sealed inside the user's capsules.
+  const [vault, sealed] = await Promise.all([
+    db.memory.aggregate({ where: { userId }, _sum: { fileSize: true } }),
+    db.capsule.aggregate({ where: { creatorId: userId }, _sum: { sealedBytes: true } }),
+  ]);
+  return (vault._sum.fileSize ?? BigInt(0)) + (sealed._sum.sealedBytes ?? BigInt(0));
 }
 
 export async function getUsage(userId: string) {
   const [plan, used, activeCapsules] = await Promise.all([
     getPlanForUser(userId),
     getStorageUsed(userId),
-    db.capsule.count({ where: { creatorId: userId, status: { in: ["LOCKED", "SCHEDULED"] } } }),
+    db.capsule.count({ where: { creatorId: userId, status: { in: ["SEALING", "LOCKED"] } } }),
   ]);
   return { plan, used, activeCapsules, features: (plan.features ?? {}) as PlanFeatures };
 }
 
-export async function assertCanStore(userId: string, sizeBytes: number) {
-  const { plan, used } = await getUsage(userId);
+export async function assertCanStore(userId: string, sizeBytes: number, extraBytes = 0) {
+  const { plan, used: stored } = await getUsage(userId);
+  const used = stored + BigInt(extraBytes);
   if (BigInt(sizeBytes) > plan.maxFileSizeBytes) {
     throw limitReached(`Files on the ${plan.name} plan can be up to ${formatBytes(Number(plan.maxFileSizeBytes))}.`);
   }
@@ -58,7 +63,7 @@ export async function assertCanStore(userId: string, sizeBytes: number) {
 export async function assertCanLock(userId: string, recipientCount: number) {
   const { plan, activeCapsules } = await getUsage(userId);
   if (plan.maxActiveCapsules != null && activeCapsules >= plan.maxActiveCapsules) {
-    throw limitReached(`The ${plan.name} plan holds ${plan.maxActiveCapsules} locked capsules at a time. Upgrade to lock more.`);
+    throw limitReached(`The ${plan.name} plan holds ${plan.maxActiveCapsules} sealed capsules at a time. Upgrade to seal more.`);
   }
   if (recipientCount > plan.maxRecipients) {
     throw limitReached(`The ${plan.name} plan allows up to ${plan.maxRecipients} recipients per capsule.`);

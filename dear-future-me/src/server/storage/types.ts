@@ -1,3 +1,5 @@
+import type { Readable } from "node:stream";
+
 export type UploadedPart = { partNumber: number; etag: string };
 
 export interface StorageDriver {
@@ -11,6 +13,10 @@ export interface StorageDriver {
   head(key: string): Promise<{ size: number } | null>;
   readRange(key: string, start: number, endInclusive: number): Promise<Buffer>;
   getBuffer(key: string): Promise<Buffer>;
+  /** Streams an object, optionally a byte range (inclusive). */
+  getStream(key: string, range?: { start: number; end: number }): Promise<Readable>;
+  /** Stores a stream of unknown length. */
+  putStream(key: string, body: Readable, contentType: string): Promise<void>;
   put(key: string, body: Buffer, contentType: string): Promise<void>;
   /** A short-lived URL for reading a private object. */
   signDownloadUrl(key: string, opts: { ttlSec: number; contentType?: string; downloadName?: string }): Promise<string>;

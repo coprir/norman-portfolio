@@ -33,14 +33,15 @@ enum ScanStatus {
   INFECTED
 }
 
+/// The only lifecycle: DRAFT → SEALING → LOCKED → AVAILABLE → OPENED.
+/// (SEALING → DRAFT happens only when sealing fails and is rolled back.)
+/// Enforced by a database trigger, not just by application code.
 enum CapsuleStatus {
   DRAFT
+  SEALING
   LOCKED
-  SCHEDULED
   AVAILABLE
   OPENED
-  CANCELLED
-  FAILED
 }
 
 enum CapsuleVisibility {
@@ -66,6 +67,7 @@ enum InvitationStatus {
 }
 
 enum JobType {
+  SEAL
   RELEASE
   REMINDER
 }
@@ -287,36 +289,117 @@ model Capsule {
   kind               CapsuleKind       @default(STANDARD)
   title              String
   description        String?
+  /// Draft-only. Moved into the encrypted payload at sealing (set to NULL)
+  /// and restored when the capsule is released.
   message            String?
   categoryId         String?           @map("category_id")
+  /// Draft-only pointer to the vault memory chosen as cover.
   coverMemoryId      String?           @map("cover_memory_id")
+  /// The label on the outside: a small copy of the cover, visible while locked.
+  coverKey           String?           @map("cover_key")
   theme              String            @default("midnight")
   unlockAt           DateTime?         @map("unlock_at")
   timezone           String            @default("UTC")
   /// How the date was chosen (preset / custom / milestone), for display.
   schedule           Json?
-  status             CapsuleStatus     @default(DRAFT)
+  status             CapsuleStatus     @default(DRAFT) @map("capsule_status")
   visibility         CapsuleVisibility @default(PRIVATE)
   includeSelf        Boolean           @default(true) @map("include_self")
   allowContributions Boolean           @default(false) @map("allow_contributions")
   createdAt          DateTime          @default(now()) @map("created_at")
   updatedAt          DateTime          @updatedAt @map("updated_at")
-  lockedAt           DateTime?         @map("locked_at")
+  sealedAt           DateTime?         @map("sealed_at")
   releasedAt         DateTime?         @map("released_at")
   openedAt           DateTime?         @map("opened_at")
+
+  /// Where this capsule's ciphertext lives in the dedicated sealed store.
+  sealPrefix             String? @unique @map("seal_prefix")
+  /// Opaque handle understood by the key service; never the key itself.
+  encryptionKeyReference String? @map("encryption_key_reference")
+  /// Sealed objects with their sizes and ciphertext hashes. No private text.
+  sealedContentManifest  Json?   @map("sealed_content_manifest")
+  /// SHA-256 over the canonical manifest, checked before release.
+  contentIntegrityHash   String? @map("content_integrity_hash")
+  releaseJobId           String? @map("release_job_id")
+  sealedBytes            BigInt  @default(0) @map("sealed_bytes")
+  itemCount              Int     @default(0) @map("item_count")
 
   creator       User                  @relation("CapsuleCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   category      Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   memories      CapsuleMemory[]
+  items         CapsuleItem[]
   recipients    CapsuleRecipient[]
   contributions CapsuleContribution[]
   answers       CapsuleAnswer[]
   jobs          ScheduledJob[]
   notifications Notification[]
+  key           CapsuleKey?
 
   @@index([creatorId, status])
   @@index([status, unlockAt])
   @@map("capsules")
+}
+
+/// The wrapped per-capsule data key. Conceptually this table belongs to the
+/// key service: the application tier can write to it (it only holds a public
+/// key) but cannot unwrap what it stores.
+model CapsuleKey {
+  id          String    @id @default(cuid())
+  capsuleId   String    @unique @map("capsule_id")
+  algorithm   String
+  /// Fingerprint of the key-encryption key, for rotation.
+  kekId       String    @map("kek_id")
+  wrappedKey  Bytes     @map("wrapped_key")
+  /// The key service refuses to unwrap before this instant.
+  notBefore   DateTime  @map("not_before")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  releasedAt  DateTime? @map("released_at")
+
+  capsule Capsule @relation(fields: [capsuleId], references: [id], onDelete: Cascade)
+
+  @@map("capsule_keys")
+}
+
+/// What was inside, materialised only when the capsule is released.
+model CapsuleItem {
+  id               String    @id @default(cuid())
+  capsuleId        String    @map("capsule_id")
+  displayOrder     Int       @map("display_order")
+  mediaType        MediaType @map("media_type")
+  title            String?
+  description      String?
+  originalFilename String?   @map("original_filename")
+  mimeType         String?   @map("mime_type")
+  fileSize         BigInt    @default(0) @map("file_size")
+  content          String?
+  captureDate      DateTime? @map("capture_date")
+  storageKey       String?   @unique @map("storage_key")
+  thumbnailKey     String?   @map("thumbnail_key")
+  contributorName  String?   @map("contributor_name")
+  metadata         Json      @default("{}")
+
+  capsule Capsule @relation(fields: [capsuleId], references: [id], onDelete: Cascade)
+
+  @@unique([capsuleId, displayOrder])
+  @@map("capsule_items")
+}
+
+/// Append-only, hash-chained history of everything that happened to a
+/// capsule. Rows can never be updated or deleted (database trigger), and the
+/// history outlives the capsule itself (no foreign key).
+model CapsuleEvent {
+  id        String   @id @default(cuid())
+  capsuleId String   @map("capsule_id")
+  seq       Int
+  type      String
+  actorId   String?  @map("actor_id")
+  data      Json     @default("{}")
+  prevHash  String?  @map("prev_hash")
+  hash      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([capsuleId, seq])
+  @@map("capsule_events")
 }
 
 model CapsuleMemory {

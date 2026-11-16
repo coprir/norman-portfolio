@@ -11,6 +11,8 @@ import {
   S3Client,
   UploadPartCommand,
 } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
+import type { Readable } from "node:stream";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../env";
 import type { StorageDriver, UploadedPart } from "./types";
@@ -96,6 +98,17 @@ export class S3Storage implements StorageDriver {
   async getBuffer(key: string) {
     const out = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
     return Buffer.from(await out.Body!.transformToByteArray());
+  }
+
+  async getStream(key: string, range?: { start: number; end: number }) {
+    const out = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key, Range: range ? `bytes=${range.start}-${range.end}` : undefined }),
+    );
+    return out.Body as Readable;
+  }
+
+  async putStream(key: string, body: Readable, contentType: string) {
+    await new Upload({ client: this.client, params: { Bucket: this.bucket, Key: key, Body: body, ContentType: contentType } }).done();
   }
 
   async put(key: string, body: Buffer, contentType: string) {

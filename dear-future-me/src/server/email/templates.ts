@@ -60,10 +60,10 @@ export function passwordReset(name: string, token: string): EmailContent {
 
 export function capsuleLocked(name: string, capsule: { id: string; title: string }, unlockLabel: string): EmailContent {
   const cta = { label: "See your timeline", url: `${env.appUrl}/app/capsules/${capsule.id}` };
-  const lines = [`Dear ${name},`, `Your capsule “${capsule.title}” is locked.`, `It will open on ${unlockLabel}. Until then, there's nothing you need to do — we'll write to you when it's time.`];
+  const lines = [`Dear ${name},`, `Your capsule “${capsule.title}” is sealed.`, `It will open on ${unlockLabel}. Until then nobody can see inside — not even you. We'll write to you when it's time.`];
   return {
     template: "capsule-locked",
-    subject: `“${capsule.title}” is locked`,
+    subject: `“${capsule.title}” is sealed`,
     html: layout({ preheader: `Opens ${unlockLabel}.`, paragraphs: lines.map(esc), cta }),
     text: text(lines, cta),
   };
@@ -118,8 +118,8 @@ export function capsuleInvite(opts: { name: string; creatorName: string; capsule
   const lines = [
     `Dear ${opts.name},`,
     `${opts.creatorName} has included you in a time capsule called “${opts.capsule.title}”.`,
-    `It opens on ${opts.unlockLabel}. Nobody can see inside until then.`,
-    opts.canContribute ? "You're invited to add your own photographs, videos or a note before it's opened." : "Accept the invitation and we'll let you know when it's time.",
+    opts.canContribute ? `It will open on ${opts.unlockLabel}.` : `It opens on ${opts.unlockLabel}. Nobody can see inside until then.`,
+    opts.canContribute ? "You're invited to add your own photographs, videos or a note before it is sealed. Once sealed, nothing can be added or seen until it opens." : "Accept the invitation and we'll let you know when it's time.",
   ];
   return {
     template: "capsule-invite",
@@ -131,11 +131,11 @@ export function capsuleInvite(opts: { name: string; creatorName: string; capsule
 
 export function capsuleContribution(name: string, contributorName: string, capsule: { id: string; title: string }): EmailContent {
   const cta = { label: "View the capsule", url: `${env.appUrl}/app/capsules/${capsule.id}` };
-  const lines = [`Dear ${name},`, `${contributorName} added something to “${capsule.title}”.`, "You'll see it with everyone else when the capsule opens."];
+  const lines = [`Dear ${name},`, `${contributorName} added something to “${capsule.title}”.`, "Preview it before you seal the capsule. After sealing, nobody sees it again until the capsule opens."];
   return {
     template: "capsule-contribution",
     subject: `${contributorName} added to “${capsule.title}”`,
-    html: layout({ preheader: "A new contribution was sealed inside.", paragraphs: lines.map(esc), cta }),
+    html: layout({ preheader: "A new contribution is waiting in your draft.", paragraphs: lines.map(esc), cta }),
     text: text(lines, cta),
   };
 }

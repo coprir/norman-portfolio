@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { audit } from "./audit";
+import { recordEvent } from "./capsules/events";
 import type { SessionUser } from "./auth/session";
 import { db } from "./db";
 import { badRequest } from "./errors";
@@ -49,9 +50,9 @@ export async function setAvatar(user: SessionUser, image: Buffer) {
 export async function exportUserData(user: SessionUser) {
   const [profile, memories, albums, capsules, received, notifications, auditLogs] = await Promise.all([
     getProfile(user),
-    db.memory.findMany({ where: { userId: user.id, status: "READY" }, include: { category: true, capsules: { select: { capsule: { select: { id: true, status: true } } } } }, orderBy: { captureDate: "asc" } }),
+    db.memory.findMany({ where: { userId: user.id, status: "READY" }, include: { category: true }, orderBy: { captureDate: "asc" } }),
     db.album.findMany({ where: { userId: user.id }, include: { memories: { select: { memoryId: true } } } }),
-    db.capsule.findMany({ where: { creatorId: user.id }, include: { recipients: true, memories: { select: { memoryId: true, displayOrder: true } }, answers: { where: { userId: user.id } } } }),
+    db.capsule.findMany({ where: { creatorId: user.id }, include: { recipients: true, items: { orderBy: { displayOrder: "asc" } }, answers: { where: { userId: user.id } } } }),
     db.capsuleRecipient.findMany({ where: { userId: user.id, capsule: { creatorId: { not: user.id } } }, include: { capsule: { select: { id: true, title: true, status: true, unlockAt: true } } } }),
     db.notification.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
     db.auditLog.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
@@ -64,7 +65,6 @@ export async function exportUserData(user: SessionUser) {
     profile: { ...profile, avatarUrl: undefined },
     memories: await Promise.all(
       memories.map(async (m) => {
-        const sealed = !m.inVault && m.capsules.some((c) => ["LOCKED", "SCHEDULED", "FAILED"].includes(c.capsule.status));
         return {
           id: m.id,
           title: m.title,
@@ -78,34 +78,49 @@ export async function exportUserData(user: SessionUser) {
           captureDate: m.captureDate,
           uploadedAt: m.uploadedAt,
           inVault: m.inVault,
-          sealedUntilCapsuleOpens: sealed,
-          letter: sealed ? null : m.content,
-          downloadUrl: !sealed && m.storageKey ? absolute(await s.signDownloadUrl(m.storageKey, { ttlSec: HOUR, contentType: m.mimeType ?? undefined, downloadName: m.originalFilename ?? undefined })) : null,
+          letter: m.content,
+          downloadUrl: m.storageKey ? absolute(await s.signDownloadUrl(m.storageKey, { ttlSec: HOUR, contentType: m.mimeType ?? undefined, downloadName: m.originalFilename ?? undefined })) : null,
         };
       }),
     ),
     albums: albums.map((a) => ({ id: a.id, name: a.name, description: a.description, memoryIds: a.memories.map((m) => m.memoryId) })),
-    capsules: capsules.map((c) => {
-      const sealed = ["LOCKED", "SCHEDULED", "FAILED"].includes(c.status);
-      return {
-        id: c.id,
-        title: c.title,
-        description: c.description,
-        kind: c.kind,
-        status: c.status,
-        visibility: c.visibility,
-        createdAt: c.createdAt,
-        lockedAt: c.lockedAt,
-        unlockAt: c.unlockAt,
-        releasedAt: c.releasedAt,
-        openedAt: c.openedAt,
-        timezone: c.timezone,
-        message: sealed ? "[sealed until this capsule opens]" : c.message,
-        memoryIds: c.memories.sort((a, b) => a.displayOrder - b.displayOrder).map((m) => m.memoryId),
-        recipients: c.recipients.map((r) => ({ email: r.email, name: r.recipientName, permission: r.permission, invitationStatus: r.invitationStatus })),
-        answers: sealed ? "[sealed until this capsule opens]" : c.answers.map((a) => ({ prompt: a.prompt, answer: a.answer, phase: a.phase, at: a.createdAt })),
-      };
-    }),
+    capsules: await Promise.all(
+      capsules.map(async (c) => {
+        const sealed = c.status === "SEALING" || c.status === "LOCKED";
+        return {
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          kind: c.kind,
+          status: c.status,
+          visibility: c.visibility,
+          createdAt: c.createdAt,
+          sealedAt: c.sealedAt,
+          unlockAt: c.unlockAt,
+          releasedAt: c.releasedAt,
+          openedAt: c.openedAt,
+          timezone: c.timezone,
+          contentIntegrityHash: c.contentIntegrityHash,
+          recipients: c.recipients.map((r) => ({ email: r.email, name: r.recipientName, invitationStatus: r.invitationStatus })),
+          // A sealed capsule's contents are encrypted and cannot be exported until it opens.
+          contents: sealed
+            ? "[sealed until this capsule opens]"
+            : {
+                message: c.message,
+                answers: c.answers.map((a) => ({ prompt: a.prompt, answer: a.answer, phase: a.phase, at: a.createdAt })),
+                items: await Promise.all(
+                  c.items.map(async (i) => ({
+                    title: i.title,
+                    mediaType: i.mediaType,
+                    originalFilename: i.originalFilename,
+                    letter: i.content,
+                    downloadUrl: i.storageKey ? absolute(await s.signDownloadUrl(i.storageKey, { ttlSec: HOUR, contentType: i.mimeType ?? undefined, downloadName: i.originalFilename ?? undefined })) : null,
+                  })),
+                ),
+              },
+        };
+      }),
+    ),
     capsulesSharedWithMe: received.map((r) => ({ capsuleId: r.capsule.id, title: r.capsule.title, status: r.capsule.status, unlockAt: r.capsule.unlockAt, invitationStatus: r.invitationStatus })),
     notifications: notifications.map((n) => ({ type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, readAt: n.readAt })),
     activityLog: auditLogs.map((a) => ({ action: a.action, resourceId: a.resourceId, at: a.createdAt })),
@@ -119,16 +134,30 @@ function absolute(url: string) {
 }
 
 /**
- * Erases the account: every stored object first, then the user row, whose
- * foreign keys cascade to memories, capsules, notifications and tokens.
- * Audit entries are kept with the user reference removed.
+ * Erases the account (GDPR Art. 17): every stored object first, then the user
+ * row, whose foreign keys cascade to memories, capsules and notifications.
+ *
+ * This is the only path that removes a sealed capsule, and it can only
+ * destroy one — sealed content is deleted still encrypted, never revealed.
+ * Each destroyed capsule gets a final entry in its permanent event history.
  */
 export async function deleteAccount(user: SessionUser, ip?: string) {
-  const memories = await db.memory.findMany({ where: { userId: user.id }, select: { storageKey: true, thumbnailKey: true, uploadId: true } });
+  const [memories, capsules] = await Promise.all([
+    db.memory.findMany({ where: { userId: user.id }, select: { storageKey: true, thumbnailKey: true, uploadId: true } }),
+    db.capsule.findMany({ where: { creatorId: user.id }, include: { items: { select: { storageKey: true, thumbnailKey: true } } } }),
+  ]);
   for (const m of memories) {
     if (m.uploadId && m.storageKey) await storage().abortMultipartUpload(m.storageKey, m.uploadId).catch(() => {});
   }
-  await deleteObjects([...memories.flatMap((m) => [m.storageKey, m.thumbnailKey]), user.avatarKey]);
-  await audit({ userId: user.id, action: "account.deleted", ip, metadata: { objects: memories.length } });
-  await db.user.delete({ where: { id: user.id } });
+  const capsuleKeys = capsules.flatMap((c) => [
+    c.coverKey,
+    ...c.items.flatMap((i) => [i.storageKey, i.thumbnailKey]),
+    ...(c.sealPrefix ? ((c.sealedContentManifest as { objects?: { name: string }[] } | null)?.objects ?? []).map((o) => `sealed/${c.sealPrefix}/${o.name}`) : []),
+  ]);
+  await deleteObjects([...memories.flatMap((m) => [m.storageKey, m.thumbnailKey]), ...capsuleKeys, user.avatarKey]);
+  for (const c of capsules) {
+    if (c.status !== "DRAFT") await recordEvent(db, c.id, "erased", user.id, { reason: "account_deleted", status: c.status });
+  }
+  await audit({ userId: user.id, action: "account.deleted", ip, metadata: { memories: memories.length, capsules: capsules.length } });
+  await db.$transaction([db.$executeRaw`SELECT set_config('dfm.erasure', 'on', true)`, db.user.delete({ where: { id: user.id } })]);
 }

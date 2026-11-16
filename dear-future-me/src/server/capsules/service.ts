@@ -1,4 +1,4 @@
-import { Prisma, type Capsule, type CapsuleRecipient } from "@prisma/client";
+import { Prisma, type Capsule } from "@prisma/client";
 import { z } from "zod";
 import { PRESETS, ScheduleError, computeUnlockAt, describeSchedule, formatInZone, isValidTimezone, type ScheduleInput } from "@/lib/time/release";
 import { audit } from "../audit";
@@ -6,15 +6,13 @@ import type { SessionUser } from "../auth/session";
 import { hashToken, newToken } from "../auth/tokens";
 import { db } from "../db";
 import { sendEmailSafe } from "../email/send";
-import { capsuleContribution, capsuleInvite, capsuleLocked } from "../email/templates";
+import { capsuleContribution, capsuleInvite } from "../email/templates";
 import { badRequest, conflict, forbidden, notFound } from "../errors";
-import { logger } from "../logger";
 import { assertCategory, deleteObjects, toMemoryDTO, type MemoryDTO } from "../memories";
-import { notify, wantsEmail } from "../notifications";
-import { assertCanLock } from "../plans";
+import { notify } from "../notifications";
 import { DOWNLOAD_URL_TTL, storage } from "../storage";
 import { getCapsuleAccess, isReleased, matchRecipient } from "./access";
-import { scheduleCapsuleJobs } from "../release/queue";
+import { recordEvent } from "./events";
 
 // ── Validation ─────────────────────────────────────────────────────────────
 
@@ -65,7 +63,7 @@ export type DraftPatch = z.infer<typeof draftPatchSchema>;
 
 const include = {
   recipients: true,
-  creator: { select: { id: true, name: true } },
+  creator: { select: { id: true, name: true, email: true } },
   _count: { select: { memories: true } },
 } satisfies Prisma.CapsuleInclude;
 type CapsuleRow = Prisma.CapsuleGetPayload<{ include: typeof include }>;
@@ -83,7 +81,7 @@ export type CapsuleDTO = {
   timezone: string;
   scheduleLabel: string | null;
   createdAt: string;
-  lockedAt: string | null;
+  sealedAt: string | null;
   releasedAt: string | null;
   openedAt: string | null;
   creator: { id: string; name: string };
@@ -93,7 +91,8 @@ export type CapsuleDTO = {
   canContribute: boolean;
   includeSelf: boolean;
   allowContributions: boolean;
-  memoryCount: number | null;
+  /** How many items are inside. Only the creator, or anyone after release, is told. */
+  itemCount: number | null;
   recipientCount: number;
   recipients: { id: string; email: string; name: string | null; permission: string; invitationStatus: string; isSelf: boolean }[] | null;
   myInvitation: { status: string; permission: string } | null;
@@ -101,18 +100,23 @@ export type CapsuleDTO = {
   coverThumbUrl: string | null;
 };
 
-async function coverUrls(rows: { coverMemoryId: string | null }[]): Promise<Map<string, string>> {
-  const ids = [...new Set(rows.map((r) => r.coverMemoryId).filter((v): v is string => Boolean(v)))];
-  if (!ids.length) return new Map();
-  const covers = await db.memory.findMany({ where: { id: { in: ids }, thumbnailKey: { not: null } }, select: { id: true, thumbnailKey: true } });
+/** Signed URLs for capsule covers: the draft's chosen memory, or the sealed capsule's outside label. */
+async function coverUrls(rows: { id: string; status: Capsule["status"]; coverMemoryId: string | null; coverKey: string | null }[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  for (const c of covers) out.set(c.id, await storage().signDownloadUrl(c.thumbnailKey!, { ttlSec: DOWNLOAD_URL_TTL * 3, contentType: "image/webp" }));
+  const sign = (key: string) => storage().signDownloadUrl(key, { ttlSec: DOWNLOAD_URL_TTL * 3, contentType: "image/webp" });
+  const draftIds = rows.filter((r) => r.status === "DRAFT" && r.coverMemoryId).map((r) => r.coverMemoryId!);
+  const covers = draftIds.length ? await db.memory.findMany({ where: { id: { in: draftIds }, thumbnailKey: { not: null } }, select: { id: true, thumbnailKey: true } }) : [];
+  const byMemory = new Map(covers.map((c) => [c.id, c.thumbnailKey!]));
+  for (const r of rows) {
+    const key = r.status === "DRAFT" ? (r.coverMemoryId ? byMemory.get(r.coverMemoryId) : undefined) : r.coverKey;
+    if (key) out.set(r.id, await sign(key));
+  }
   return out;
 }
 
 function shape(user: SessionUser, c: CapsuleRow, covers: Map<string, string>): CapsuleDTO {
   const access = getCapsuleAccess(user, c);
-  const others = c.recipients.filter((r) => r.userId !== c.creatorId);
+  const others = c.recipients.filter((r) => r.userId !== c.creatorId && r.email !== c.creator.email);
   return {
     id: c.id,
     title: c.title,
@@ -126,18 +130,17 @@ function shape(user: SessionUser, c: CapsuleRow, covers: Map<string, string>): C
     timezone: c.timezone,
     scheduleLabel: c.schedule ? describeSchedule(c.schedule as ScheduleInput) : null,
     createdAt: c.createdAt.toISOString(),
-    lockedAt: c.lockedAt?.toISOString() ?? null,
+    sealedAt: c.sealedAt?.toISOString() ?? null,
     releasedAt: c.releasedAt?.toISOString() ?? null,
     openedAt: c.openedAt?.toISOString() ?? null,
-    creator: c.creator,
+    creator: { id: c.creator.id, name: c.creator.name },
     isCreator: access.isCreator,
     isReleased: access.isReleased,
     canViewContents: access.canViewContents,
     canContribute: access.canContribute,
     includeSelf: c.includeSelf,
     allowContributions: c.allowContributions,
-    // Recipients learn how much is inside only when it opens.
-    memoryCount: access.isCreator || access.canViewContents ? c._count.memories : null,
+    itemCount: c.status === "DRAFT" ? (access.isCreator ? c._count.memories : null) : access.isCreator || access.canViewContents ? c.itemCount : null,
     recipientCount: others.length,
     recipients: access.isCreator
       ? c.recipients.map((r) => ({
@@ -151,8 +154,7 @@ function shape(user: SessionUser, c: CapsuleRow, covers: Map<string, string>): C
       : null,
     myInvitation: !access.isCreator && access.recipient ? { status: access.recipient.invitationStatus, permission: access.recipient.permission } : null,
     iHaveOpened: Boolean(access.recipient?.openedAt) || (access.isCreator && !c.includeSelf && Boolean(c.openedAt)),
-    // The cover is the label on the outside of the capsule: visible while locked.
-    coverThumbUrl: c.coverMemoryId ? (covers.get(c.coverMemoryId) ?? null) : null,
+    coverThumbUrl: covers.get(c.id) ?? null,
   };
 }
 
@@ -191,15 +193,21 @@ export async function listCapsules(user: SessionUser) {
     db.capsule.findMany({
       where: {
         creatorId: { not: user.id },
-        status: { notIn: ["DRAFT", "CANCELLED"] },
+        status: { not: "DRAFT" },
         recipients: { some: { OR: [{ userId: user.id }, ...(user.emailVerified ? [{ userId: null, email: user.email }] : [])] } },
       },
       include,
       orderBy: { unlockAt: "asc" },
     }),
   ]);
-  const all = await toCapsuleDTOs(user, [...created, ...received]);
-  return { created: all.slice(0, created.length), received: all.slice(created.length) };
+  // Drafts the user has been invited to add memories to.
+  const contributing = await db.capsule.findMany({
+    where: { creatorId: { not: user.id }, status: "DRAFT", allowContributions: true, recipients: { some: { userId: user.id, permission: "CONTRIBUTE", invitedAt: { not: null }, invitationStatus: "ACCEPTED" } } },
+    include,
+    orderBy: { createdAt: "desc" },
+  });
+  const all = await toCapsuleDTOs(user, [...created, ...received, ...contributing]);
+  return { created: all.slice(0, created.length), received: all.slice(created.length, created.length + received.length), contributing: all.slice(created.length + received.length) };
 }
 
 export type DraftDetail = {
@@ -228,27 +236,45 @@ export async function getDraftDetail(user: SessionUser, id: string): Promise<Dra
   };
 }
 
+export type ItemDTO = {
+  id: string;
+  mediaType: MemoryDTO["mediaType"];
+  title: string | null;
+  description: string | null;
+  originalFilename: string | null;
+  mimeType: string | null;
+  fileSize: number;
+  content: string | null;
+  captureDate: string | null;
+  width: number | null;
+  height: number | null;
+  thumbUrl: string | null;
+  contributedBy: string | null;
+};
+
 export type ContentsDTO = {
   message: string | null;
-  items: (MemoryDTO & { contributedBy: string | null })[];
+  items: ItemDTO[];
   answers: { promptKey: string; prompt: string; then: string | null; now: string | null; thenAt: string | null; nowAt: string | null }[];
 };
 
-/**
- * What is inside a capsule. Refuses unless the capsule has been released and
- * the caller is its creator or one of its recipients.
- */
-export async function getContents(user: SessionUser, id: string): Promise<ContentsDTO> {
+async function assertCanView(user: SessionUser, id: string) {
   const row = await getCapsuleRow(user, id);
   if (!getCapsuleAccess(user, row).canViewContents) {
-    throw forbidden(isReleased(row.status) ? "You don't have access to this capsule." : "This capsule is still locked.");
+    throw forbidden(isReleased(row.status) ? "You don't have access to this capsule." : "This capsule is sealed. It can't be opened before its date.");
   }
-  const [links, answers] = await Promise.all([
-    db.capsuleMemory.findMany({
-      where: { capsuleId: id, memory: { status: "READY" } },
-      orderBy: { displayOrder: "asc" },
-      include: { memory: { include: { user: { select: { id: true, name: true } } } } },
-    }),
+  return row;
+}
+
+/**
+ * What is inside a capsule. Refuses unless the capsule has been released and
+ * the caller is its creator or one of its recipients. Before release there is
+ * nothing to return in any case: the contents exist only as ciphertext.
+ */
+export async function getContents(user: SessionUser, id: string): Promise<ContentsDTO> {
+  const row = await assertCanView(user, id);
+  const [items, answers] = await Promise.all([
+    db.capsuleItem.findMany({ where: { capsuleId: id }, orderBy: { displayOrder: "asc" } }),
     db.capsuleAnswer.findMany({ where: { capsuleId: id, OR: [{ phase: "THEN" }, { phase: "NOW", userId: user.id }] }, orderBy: { createdAt: "asc" } }),
   ]);
   const prompts = new Map<string, ContentsDTO["answers"][number]>();
@@ -258,15 +284,45 @@ export async function getContents(user: SessionUser, id: string): Promise<Conten
     else Object.assign(cur, { now: a.answer, nowAt: a.createdAt.toISOString() });
     prompts.set(a.promptKey, cur);
   }
+  const s = storage();
   return {
     message: row.message,
     items: await Promise.all(
-      links.map(async (l) => ({
-        ...(await toMemoryDTO(l.memory)),
-        contributedBy: l.memory.userId !== row.creatorId ? l.memory.user.name : null,
-      })),
+      items.map(async (i) => {
+        const meta = (i.metadata ?? {}) as { width?: number; height?: number };
+        return {
+          id: i.id,
+          mediaType: i.mediaType,
+          title: i.title,
+          description: i.description,
+          originalFilename: i.originalFilename,
+          mimeType: i.mimeType,
+          fileSize: Number(i.fileSize),
+          content: i.content,
+          captureDate: i.captureDate?.toISOString() ?? null,
+          width: meta.width ?? null,
+          height: meta.height ?? null,
+          thumbUrl: i.thumbnailKey ? await s.signDownloadUrl(i.thumbnailKey, { ttlSec: DOWNLOAD_URL_TTL * 3, contentType: "image/webp" }) : null,
+          contributedBy: i.contributorName,
+        };
+      }),
     ),
     answers: [...prompts.values()].filter((p) => p.then),
+  };
+}
+
+/** A five-minute signed URL for one released item, issued only after the access check. */
+export async function getItemUrl(user: SessionUser, capsuleId: string, itemId: string, opts: { download?: boolean } = {}) {
+  await assertCanView(user, capsuleId);
+  const item = await db.capsuleItem.findFirst({ where: { id: itemId, capsuleId } });
+  if (!item?.storageKey) throw notFound("Item not found.");
+  return {
+    url: await storage().signDownloadUrl(item.storageKey, {
+      ttlSec: DOWNLOAD_URL_TTL,
+      contentType: item.mimeType ?? undefined,
+      downloadName: opts.download ? (item.originalFilename ?? item.title ?? "memory") : undefined,
+    }),
+    expiresInSec: DOWNLOAD_URL_TTL,
   };
 }
 
@@ -289,6 +345,7 @@ export async function createDraft(user: SessionUser, input: { kind: Capsule["kin
     body: `“${c.title}” is saved as a draft. Lock it when you're ready.`,
     dedupeKey: `created:${c.id}`,
   });
+  await recordEvent(db, c.id, "created", user.id, { kind: c.kind });
   await audit({ userId: user.id, action: "capsule.created", resourceId: c.id });
   return { id: c.id };
 }
@@ -296,7 +353,7 @@ export async function createDraft(user: SessionUser, input: { kind: Capsule["kin
 async function getOwnDraft(userId: string, id: string) {
   const c = await db.capsule.findFirst({ where: { id, creatorId: userId } });
   if (!c) throw notFound("Capsule not found.");
-  if (c.status !== "DRAFT") throw conflict("This capsule is locked and can no longer be edited.");
+  if (c.status !== "DRAFT") throw conflict("This capsule is sealed and can no longer be changed.");
   return c;
 }
 
@@ -316,7 +373,9 @@ export async function updateDraft(user: SessionUser, id: string, patch: DraftPat
   }
 
   if (patch.memoryIds) {
-    const owned = await db.memory.count({ where: { id: { in: patch.memoryIds }, userId: user.id, status: "READY" } });
+    const owned = await db.memory.count({
+      where: { id: { in: patch.memoryIds }, status: "READY", OR: [{ userId: user.id }, { contributions: { some: { capsuleId: c.id } } }] },
+    });
     if (owned !== new Set(patch.memoryIds).size) throw badRequest("One of the selected memories isn't available.");
   }
   const memoryIds = patch.memoryIds ? [...new Set(patch.memoryIds)] : undefined;
@@ -349,10 +408,15 @@ export async function updateDraft(user: SessionUser, id: string, patch: DraftPat
     }
     if (patch.recipients) {
       const unique = new Map(patch.recipients.filter((r) => r.email !== user.email).map((r) => [r.email, r]));
-      await tx.capsuleRecipient.deleteMany({ where: { capsuleId: c.id } });
-      await tx.capsuleRecipient.createMany({
-        data: [...unique.values()].map((r) => ({ capsuleId: c.id, email: r.email, recipientName: r.name || null, permission: r.permission })),
-      });
+      // Keep existing rows (and any invitation already accepted); only add, update and remove the difference.
+      await tx.capsuleRecipient.deleteMany({ where: { capsuleId: c.id, email: { notIn: [...unique.keys()] } } });
+      for (const r of unique.values()) {
+        await tx.capsuleRecipient.upsert({
+          where: { capsuleId_email: { capsuleId: c.id, email: r.email } },
+          update: { recipientName: r.name || null, permission: r.permission },
+          create: { capsuleId: c.id, email: r.email, recipientName: r.name || null, permission: r.permission },
+        });
+      }
     }
     if (patch.answers) {
       await tx.capsuleAnswer.deleteMany({ where: { capsuleId: c.id, userId: user.id, phase: "THEN" } });
@@ -366,8 +430,8 @@ export async function updateDraft(user: SessionUser, id: string, patch: DraftPat
   return getDraftDetail(user, id);
 }
 
-/** Deletes sealed (capsule-only) memories the capsule's creator made for it. */
-async function deleteSealedMemories(capsuleId: string) {
+/** Deletes capsule-only memories (never in a vault) that exist solely for this draft. */
+async function deleteDraftOnlyMemories(capsuleId: string) {
   const sealed = await db.memory.findMany({
     where: { inVault: false, capsules: { some: { capsuleId }, every: { capsuleId } } },
     select: { id: true, storageKey: true, thumbnailKey: true },
@@ -378,146 +442,41 @@ async function deleteSealedMemories(capsuleId: string) {
 
 export async function deleteDraft(user: SessionUser, id: string) {
   const c = await getOwnDraft(user.id, id);
-  await deleteSealedMemories(c.id);
+  await deleteDraftOnlyMemories(c.id);
   await db.capsule.delete({ where: { id: c.id } });
   await audit({ userId: user.id, action: "capsule.draft_deleted", resourceId: c.id });
 }
 
-// ── Locking ────────────────────────────────────────────────────────────────
-
-const HOUR = 60 * 60 * 1000;
-const REMINDERS = [
-  { variant: "7d", ms: 7 * 24 * HOUR },
-  { variant: "1d", ms: 24 * HOUR },
-];
-
-export async function lockCapsule(user: SessionUser, id: string, ip?: string): Promise<CapsuleDTO> {
-  if (!user.emailVerified) throw forbidden("Confirm your email address before locking a capsule, so it can find you when it opens.");
-  const c = await db.capsule.findFirst({
-    where: { id, creatorId: user.id },
-    include: { recipients: true, memories: { include: { memory: { select: { status: true, userId: true } } } }, _count: { select: { answers: true } } },
-  });
-  if (!c) throw notFound("Capsule not found.");
-  if (c.status !== "DRAFT") throw conflict("This capsule is already locked.");
-  if (!c.title.trim()) throw badRequest("Give your capsule a title.");
-  if (!c.schedule) throw badRequest("Choose when this capsule should open.");
-  if (!c.memories.length && !c.message?.trim() && !c._count.answers) throw badRequest("Add at least one memory or a message before locking.");
-  if (c.memories.some((m) => m.memory.status !== "READY" || m.memory.userId !== user.id)) {
-    throw badRequest("One of the memories in this capsule is no longer available.");
-  }
-  const others = c.recipients.filter((r) => r.email !== user.email);
-  if (!c.includeSelf && !others.length) throw badRequest("Choose who will receive this capsule.");
-  await assertCanLock(user.id, others.length);
-
-  const now = new Date();
-  let unlockAt: Date;
-  try {
-    // Recomputed at the moment of locking: "in one year" counts from now.
-    unlockAt = computeUnlockAt(c.schedule as ScheduleInput, now);
-  } catch (err) {
-    if (err instanceof ScheduleError) throw badRequest(err.message);
-    throw err;
-  }
-
-  const registered = await db.user.findMany({
-    where: { email: { in: others.map((r) => r.email) }, emailVerifiedAt: { not: null } },
-    select: { id: true, email: true, name: true },
-  });
-  const byEmail = new Map(registered.map((u) => [u.email, u]));
-  const invites = others.map((r) => ({ recipient: r, token: newToken(), account: byEmail.get(r.email) ?? null }));
-
-  await db.$transaction(async (tx) => {
-    const locked = await tx.capsule.updateMany({
-      where: { id: c.id, status: "DRAFT" },
-      data: {
-        status: "LOCKED",
-        lockedAt: now,
-        unlockAt,
-        visibility: others.length && c.visibility === "PRIVATE" ? "SHARED" : !others.length ? "PRIVATE" : c.visibility,
-      },
-    });
-    if (locked.count !== 1) throw conflict("This capsule is already locked.");
-    await tx.capsuleRecipient.deleteMany({ where: { capsuleId: c.id, email: user.email } });
-    if (c.includeSelf) {
-      await tx.capsuleRecipient.create({
-        data: { capsuleId: c.id, userId: user.id, email: user.email, recipientName: user.name, permission: "CONTRIBUTE", invitationStatus: "ACCEPTED", acceptedAt: now },
-      });
-    }
-    for (const inv of invites) {
-      await tx.capsuleRecipient.update({
-        where: { id: inv.recipient.id },
-        data: { userId: inv.account?.id ?? null, inviteTokenHash: hashToken(inv.token), invitedAt: now },
-      });
-    }
-    await tx.scheduledJob.create({ data: { capsuleId: c.id, type: "RELEASE", scheduledAt: unlockAt } });
-    const reminders = REMINDERS.filter((r) => unlockAt.getTime() - r.ms > now.getTime() + HOUR);
-    if (reminders.length) {
-      await tx.scheduledJob.createMany({
-        data: reminders.map((r) => ({ capsuleId: c.id, type: "REMINDER" as const, variant: r.variant, scheduledAt: new Date(unlockAt.getTime() - r.ms) })),
-      });
-    }
-  });
-
-  await audit({ userId: user.id, action: "capsule.locked", resourceId: c.id, ip, metadata: { unlockAt: unlockAt.toISOString(), recipients: others.length } });
-  // If Redis is unreachable the capsule stays LOCKED and the worker's sweeper
-  // picks the job up from Postgres, so locking never depends on the queue.
-  await scheduleCapsuleJobs(c.id).catch((err) => logger.warn({ err: err.message, capsuleId: c.id }, "could not enqueue jobs at lock time; sweeper will"));
-
-  const unlockLabel = formatInZone(unlockAt, c.timezone);
-  await notify(
-    { userId: user.id, type: "CAPSULE_LOCKED", capsuleId: c.id, title: "Capsule locked", body: `“${c.title}” will open on ${unlockLabel}.`, dedupeKey: `locked:${c.id}` },
-    (u) => capsuleLocked(u.name, c, unlockLabel),
-  );
-  for (const inv of invites) await sendInvite(user, c, inv.recipient, inv.token, inv.account, unlockLabel);
-  return getCapsule(user, c.id);
-}
-
-async function sendInvite(
-  creator: SessionUser,
-  c: Capsule,
-  r: CapsuleRecipient,
-  token: string,
-  account: { id: string; name: string } | null,
-  unlockLabel: string,
-) {
-  const content = capsuleInvite({
-    name: r.recipientName || account?.name || "there",
-    creatorName: creator.name,
-    capsule: c,
-    unlockLabel,
-    canContribute: c.allowContributions && r.permission === "CONTRIBUTE",
-    inviteToken: token,
-  });
-  if (account) {
-    await notify(
-      {
-        userId: account.id,
-        type: "CAPSULE_INVITE",
-        capsuleId: c.id,
-        title: `${creator.name} invited you to a capsule`,
-        body: `“${c.title}” opens on ${unlockLabel}.`,
-        dedupeKey: `invite:${r.id}`,
-      },
-      () => content,
-    );
-  } else {
-    await sendEmailSafe(r.email, content);
-  }
-}
+// ── Gathering contributions (draft only) ───────────────────────────────────
 
 /**
- * Permanently cancels a locked capsule. It never opens, and anything sealed
- * only inside it is destroyed rather than revealed early.
+ * Invites the draft's CONTRIBUTE recipients to add their own memories before
+ * it is sealed. After sealing nobody can add anything.
  */
-export async function cancelCapsule(user: SessionUser, id: string, ip?: string) {
-  const c = await db.capsule.findFirst({ where: { id, creatorId: user.id } });
+export async function inviteContributors(user: SessionUser, id: string) {
+  if (!user.emailVerified) throw forbidden("Confirm your email address before inviting others.");
+  const c = await db.capsule.findFirst({ where: { id, creatorId: user.id }, include: { recipients: true } });
   if (!c) throw notFound("Capsule not found.");
-  if (!["LOCKED", "SCHEDULED", "FAILED"].includes(c.status)) throw conflict("Only a locked capsule can be cancelled.");
-  const res = await db.capsule.updateMany({ where: { id, status: { in: ["LOCKED", "SCHEDULED", "FAILED"] } }, data: { status: "CANCELLED" } });
-  if (res.count !== 1) throw conflict("This capsule has just opened and can no longer be cancelled.");
-  await db.scheduledJob.updateMany({ where: { capsuleId: id, status: { notIn: ["COMPLETED", "CANCELLED"] } }, data: { status: "CANCELLED" } });
-  await deleteSealedMemories(id);
-  await audit({ userId: user.id, action: "capsule.cancelled", resourceId: id, ip });
+  if (c.status !== "DRAFT") throw conflict("This capsule is sealed; nobody can add to it now.");
+  if (!c.allowContributions) throw badRequest("Turn on contributions for this capsule first.");
+  const pending = c.recipients.filter((r) => r.permission === "CONTRIBUTE" && !r.invitedAt && r.email !== user.email);
+  const when = c.unlockAt ? formatInZone(c.unlockAt, c.timezone) : "a date still to be chosen";
+  for (const r of pending) {
+    const token = newToken();
+    const account = await db.user.findFirst({ where: { email: r.email, emailVerifiedAt: { not: null } }, select: { id: true, name: true } });
+    await db.capsuleRecipient.update({ where: { id: r.id }, data: { inviteTokenHash: hashToken(token), invitedAt: new Date(), userId: account?.id ?? null } });
+    const content = capsuleInvite({ name: r.recipientName || account?.name || "there", creatorName: user.name, capsule: c, unlockLabel: when, canContribute: true, inviteToken: token });
+    if (account) {
+      await notify(
+        { userId: account.id, type: "CAPSULE_INVITE", capsuleId: c.id, title: `${user.name} invited you to add to a capsule`, body: `Add your memories to “${c.title}” before it is sealed.`, dedupeKey: `contrib-invite:${r.id}` },
+        () => content,
+      );
+    } else {
+      await sendEmailSafe(r.email, content);
+    }
+  }
+  await audit({ userId: user.id, action: "capsule.contributors_invited", resourceId: c.id, metadata: { count: pending.length } });
+  return { invited: pending.length };
 }
 
 // ── After release ──────────────────────────────────────────────────────────
@@ -536,13 +495,16 @@ export async function openCapsule(user: SessionUser, id: string, ip?: string): P
       data: { openedAt: now, userId: user.id, invitationStatus: "ACCEPTED", acceptedAt: mine.acceptedAt ?? now, inviteTokenHash: null },
     });
   }
-  if (first.count === 1 || (mine && !mine.openedAt)) await audit({ userId: user.id, action: "capsule.opened", resourceId: id, ip });
+  if (first.count === 1 || (mine && !mine.openedAt)) {
+    await recordEvent(db, id, "opened", user.id, { first: first.count === 1 });
+    await audit({ userId: user.id, action: "capsule.opened", resourceId: id, ip });
+  }
   return contents;
 }
 
 export async function saveNowAnswers(user: SessionUser, id: string, answers: { promptKey: string; answer: string }[]) {
   const row = await getCapsuleRow(user, id);
-  if (!getCapsuleAccess(user, row).canViewContents) throw forbidden("This capsule is still locked.");
+  if (!getCapsuleAccess(user, row).canViewContents) throw forbidden("This capsule is sealed. It can't be opened before its date.");
   const then = await db.capsuleAnswer.findMany({ where: { capsuleId: id, phase: "THEN" } });
   const prompts = new Map(then.map((a) => [a.promptKey, a.prompt]));
   for (const a of answers) {
@@ -570,6 +532,7 @@ export async function respondToInvitation(user: SessionUser, capsuleId: string, 
       inviteTokenHash: null,
     },
   });
+  await recordEvent(db, capsuleId, action === "accept" ? "invitation_accepted" : "invitation_declined", user.id);
   await audit({ userId: user.id, action: `capsule.invite_${action}ed`, resourceId: capsuleId });
 }
 
@@ -579,8 +542,9 @@ export async function peekInvite(token: string) {
     where: { inviteTokenHash: hashToken(token) },
     include: { capsule: { select: { id: true, title: true, status: true, unlockAt: true, timezone: true, creator: { select: { name: true } } } } },
   });
-  if (!r || ["DRAFT", "CANCELLED"].includes(r.capsule.status)) return null;
-  return { capsuleId: r.capsule.id, title: r.capsule.title, creatorName: r.capsule.creator.name, unlockAt: r.capsule.unlockAt, timezone: r.capsule.timezone, released: isReleased(r.capsule.status), email: r.email, recipientName: r.recipientName };
+  if (!r) return null;
+  return {
+    draft: r.capsule.status === "DRAFT", capsuleId: r.capsule.id, title: r.capsule.title, creatorName: r.capsule.creator.name, unlockAt: r.capsule.unlockAt, timezone: r.capsule.timezone, released: isReleased(r.capsule.status), email: r.email, recipientName: r.recipientName };
 }
 
 /**
@@ -590,23 +554,21 @@ export async function peekInvite(token: string) {
  */
 export async function acceptInviteToken(user: SessionUser, token: string): Promise<{ capsuleId: string }> {
   const r = await db.capsuleRecipient.findUnique({ where: { inviteTokenHash: hashToken(token) }, include: { capsule: true } });
-  if (!r || ["DRAFT", "CANCELLED"].includes(r.capsule.status)) throw notFound("This invitation is no longer valid.");
+  if (!r) throw notFound("This invitation is no longer valid.");
   if (r.capsule.creatorId === user.id) return { capsuleId: r.capsuleId };
   const already = await db.capsuleRecipient.findFirst({ where: { capsuleId: r.capsuleId, userId: user.id, id: { not: r.id } } });
-  if (already) {
-    await db.capsuleRecipient.delete({ where: { id: r.id } });
-    return { capsuleId: r.capsuleId };
-  }
+  if (already) return { capsuleId: r.capsuleId };
   const claimed = await db.capsuleRecipient.updateMany({
     where: { id: r.id, inviteTokenHash: hashToken(token), OR: [{ userId: null }, { userId: user.id }] },
     data: { userId: user.id, invitationStatus: "ACCEPTED", acceptedAt: new Date(), inviteTokenHash: null },
   });
   if (claimed.count !== 1) throw notFound("This invitation has already been used.");
+  await recordEvent(db, r.capsuleId, "invitation_accepted", user.id, { via: "link" });
   await audit({ userId: user.id, action: "capsule.invite_accepted", resourceId: r.capsuleId, metadata: { via: "link" } });
   return { capsuleId: r.capsuleId };
 }
 
-/** Seals one of the caller's memories into a shared capsule that is still locked. */
+/** Adds one of the caller's memories to a shared capsule that hasn't been sealed yet. */
 export async function addContribution(user: SessionUser, capsuleId: string, memoryId: string) {
   const row = await getCapsuleRow(user, capsuleId);
   if (!getCapsuleAccess(user, row).canContribute) throw forbidden("This capsule isn't accepting contributions from you.");
@@ -623,17 +585,16 @@ export async function addContribution(user: SessionUser, capsuleId: string, memo
   }
   await audit({ userId: user.id, action: "capsule.contribution_added", resourceId: capsuleId, metadata: { memoryId } });
   if (row.creatorId !== user.id) {
-    const creator = await db.user.findUnique({ where: { id: row.creatorId }, select: { notificationPrefs: true } });
     await notify(
       {
         userId: row.creatorId,
         type: "CAPSULE_CONTRIBUTION",
         capsuleId,
         title: `${user.name} added to your capsule`,
-        body: `A new memory was sealed inside “${row.title}”.`,
+        body: `A new memory is waiting in “${row.title}”. Preview it before you seal.`,
         dedupeKey: `contrib:${capsuleId}:${memoryId}`,
       },
-      creator && wantsEmail(creator.notificationPrefs, "CAPSULE_CONTRIBUTION") ? (u) => capsuleContribution(u.name, user.name, row) : undefined,
+      (u) => capsuleContribution(u.name, user.name, row),
     );
   }
   const mine = await db.capsuleContribution.count({ where: { capsuleId, contributorId: user.id } });

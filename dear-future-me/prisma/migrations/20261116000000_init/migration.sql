@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN', 'SUPER_ADMIN');
 
@@ -11,7 +14,7 @@ CREATE TYPE "MemoryStatus" AS ENUM ('PENDING', 'READY', 'REJECTED');
 CREATE TYPE "ScanStatus" AS ENUM ('NOT_SCANNED', 'CLEAN', 'INFECTED');
 
 -- CreateEnum
-CREATE TYPE "CapsuleStatus" AS ENUM ('DRAFT', 'LOCKED', 'SCHEDULED', 'AVAILABLE', 'OPENED', 'CANCELLED', 'FAILED');
+CREATE TYPE "CapsuleStatus" AS ENUM ('DRAFT', 'SEALING', 'LOCKED', 'AVAILABLE', 'OPENED');
 
 -- CreateEnum
 CREATE TYPE "CapsuleVisibility" AS ENUM ('PRIVATE', 'SHARED', 'FAMILY');
@@ -26,7 +29,7 @@ CREATE TYPE "RecipientPermission" AS ENUM ('VIEW', 'CONTRIBUTE');
 CREATE TYPE "InvitationStatus" AS ENUM ('PENDING', 'ACCEPTED', 'DECLINED');
 
 -- CreateEnum
-CREATE TYPE "JobType" AS ENUM ('RELEASE', 'REMINDER');
+CREATE TYPE "JobType" AS ENUM ('SEAL', 'RELEASE', 'REMINDER');
 
 -- CreateEnum
 CREATE TYPE "JobStatus" AS ENUM ('PENDING', 'QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'DEAD', 'CANCELLED');
@@ -181,21 +184,79 @@ CREATE TABLE "capsules" (
     "message" TEXT,
     "category_id" TEXT,
     "cover_memory_id" TEXT,
+    "cover_key" TEXT,
     "theme" TEXT NOT NULL DEFAULT 'midnight',
     "unlock_at" TIMESTAMP(3),
     "timezone" TEXT NOT NULL DEFAULT 'UTC',
     "schedule" JSONB,
-    "status" "CapsuleStatus" NOT NULL DEFAULT 'DRAFT',
+    "capsule_status" "CapsuleStatus" NOT NULL DEFAULT 'DRAFT',
     "visibility" "CapsuleVisibility" NOT NULL DEFAULT 'PRIVATE',
     "include_self" BOOLEAN NOT NULL DEFAULT true,
     "allow_contributions" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "locked_at" TIMESTAMP(3),
+    "sealed_at" TIMESTAMP(3),
     "released_at" TIMESTAMP(3),
     "opened_at" TIMESTAMP(3),
+    "seal_prefix" TEXT,
+    "encryption_key_reference" TEXT,
+    "sealed_content_manifest" JSONB,
+    "content_integrity_hash" TEXT,
+    "release_job_id" TEXT,
+    "sealed_bytes" BIGINT NOT NULL DEFAULT 0,
+    "item_count" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "capsules_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "capsule_keys" (
+    "id" TEXT NOT NULL,
+    "capsule_id" TEXT NOT NULL,
+    "algorithm" TEXT NOT NULL,
+    "kek_id" TEXT NOT NULL,
+    "wrapped_key" BYTEA NOT NULL,
+    "not_before" TIMESTAMP(3) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "released_at" TIMESTAMP(3),
+
+    CONSTRAINT "capsule_keys_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "capsule_items" (
+    "id" TEXT NOT NULL,
+    "capsule_id" TEXT NOT NULL,
+    "display_order" INTEGER NOT NULL,
+    "media_type" "MediaType" NOT NULL,
+    "title" TEXT,
+    "description" TEXT,
+    "original_filename" TEXT,
+    "mime_type" TEXT,
+    "file_size" BIGINT NOT NULL DEFAULT 0,
+    "content" TEXT,
+    "capture_date" TIMESTAMP(3),
+    "storage_key" TEXT,
+    "thumbnail_key" TEXT,
+    "contributor_name" TEXT,
+    "metadata" JSONB NOT NULL DEFAULT '{}',
+
+    CONSTRAINT "capsule_items_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "capsule_events" (
+    "id" TEXT NOT NULL,
+    "capsule_id" TEXT NOT NULL,
+    "seq" INTEGER NOT NULL,
+    "type" TEXT NOT NULL,
+    "actor_id" TEXT,
+    "data" JSONB NOT NULL DEFAULT '{}',
+    "prev_hash" TEXT,
+    "hash" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "capsule_events_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -360,10 +421,25 @@ CREATE INDEX "albums_user_id_idx" ON "albums"("user_id");
 CREATE INDEX "album_memories_memory_id_idx" ON "album_memories"("memory_id");
 
 -- CreateIndex
-CREATE INDEX "capsules_creator_id_status_idx" ON "capsules"("creator_id", "status");
+CREATE UNIQUE INDEX "capsules_seal_prefix_key" ON "capsules"("seal_prefix");
 
 -- CreateIndex
-CREATE INDEX "capsules_status_unlock_at_idx" ON "capsules"("status", "unlock_at");
+CREATE INDEX "capsules_creator_id_capsule_status_idx" ON "capsules"("creator_id", "capsule_status");
+
+-- CreateIndex
+CREATE INDEX "capsules_capsule_status_unlock_at_idx" ON "capsules"("capsule_status", "unlock_at");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "capsule_keys_capsule_id_key" ON "capsule_keys"("capsule_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "capsule_items_storage_key_key" ON "capsule_items"("storage_key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "capsule_items_capsule_id_display_order_key" ON "capsule_items"("capsule_id", "display_order");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "capsule_events_capsule_id_seq_key" ON "capsule_events"("capsule_id", "seq");
 
 -- CreateIndex
 CREATE INDEX "capsule_memories_memory_id_idx" ON "capsule_memories"("memory_id");
@@ -456,6 +532,12 @@ ALTER TABLE "capsules" ADD CONSTRAINT "capsules_creator_id_fkey" FOREIGN KEY ("c
 ALTER TABLE "capsules" ADD CONSTRAINT "capsules_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "capsule_keys" ADD CONSTRAINT "capsule_keys_capsule_id_fkey" FOREIGN KEY ("capsule_id") REFERENCES "capsules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "capsule_items" ADD CONSTRAINT "capsule_items_capsule_id_fkey" FOREIGN KEY ("capsule_id") REFERENCES "capsules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "capsule_memories" ADD CONSTRAINT "capsule_memories_capsule_id_fkey" FOREIGN KEY ("capsule_id") REFERENCES "capsules"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -493,3 +575,4 @@ ALTER TABLE "scheduled_jobs" ADD CONSTRAINT "scheduled_jobs_capsule_id_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+

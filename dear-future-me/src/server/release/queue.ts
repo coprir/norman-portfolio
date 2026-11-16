@@ -52,9 +52,6 @@ export async function enqueueJob(job: { id: string; type: JobType; scheduledAt: 
     },
   );
   await db.scheduledJob.updateMany({ where: { id: job.id, status: "PENDING" }, data: { status: "QUEUED" } });
-  if (job.type === "RELEASE") {
-    await db.capsule.updateMany({ where: { id: job.capsuleId, status: "LOCKED" }, data: { status: "SCHEDULED" } });
-  }
 }
 
 /** Called right after locking: enqueue whatever is already inside the horizon. */

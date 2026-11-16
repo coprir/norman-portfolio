@@ -15,7 +15,7 @@ export function storage(): StorageDriver {
  * Unguessable object key. It contains no user-supplied text and nothing
  * derivable from ids, so paths can't be predicted or enumerated.
  */
-export function newObjectKey(prefix: "media" | "thumbs" | "avatars"): string {
+export function newObjectKey(prefix: "media" | "thumbs" | "avatars" | "covers" | "sealed" | "released"): string {
   const id = randomBytes(24).toString("hex");
   return `${prefix}/${id.slice(0, 2)}/${id}`;
 }

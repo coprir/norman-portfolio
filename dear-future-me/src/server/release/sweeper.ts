@@ -30,7 +30,6 @@ export async function sweep(): Promise<{ enqueued: number; recovered: number; re
     where: {
       status: { in: ["PENDING", "QUEUED", "FAILED"] },
       scheduledAt: { lte: new Date(now + ENQUEUE_HORIZON_MS) },
-      capsule: { status: { in: ["LOCKED", "SCHEDULED", "AVAILABLE", "OPENED"] } },
     },
     orderBy: { scheduledAt: "asc" },
     take: 500,

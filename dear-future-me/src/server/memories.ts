@@ -316,31 +316,21 @@ export async function listMemories(userId: string, query: MemoryQuery) {
 }
 
 /**
- * The single gate for reading a memory's bytes.
- *  - Vault memories: the owner, always.
- *  - Sealed (capsule-only) memories: nobody while the capsule is locked. The
- *    author may read them only while every capsule holding them is a draft.
- *  - Anything inside a released capsule: its creator and its recipients.
+ * The single gate for reading a vault memory's bytes: its owner, or the
+ * creator of a draft capsule it was contributed to (who must be able to
+ * preview everything before sealing).
+ *
+ * Sealed content is not reachable from here at all: sealing deletes the
+ * memory row and its files, so there is nothing left for this to return.
  */
 export async function canReadMemory(user: SessionUser, m: Memory): Promise<boolean> {
   if (m.status !== "READY") return false;
-  if (m.userId === user.id && m.inVault) return true;
-
-  const links = await db.capsuleMemory.findMany({
-    where: { memoryId: m.id },
-    select: { capsule: { select: { id: true, status: true, creatorId: true, recipients: { select: { userId: true, email: true, invitationStatus: true } } } } },
+  if (m.userId === user.id) return true;
+  const link = await db.capsuleContribution.findFirst({
+    where: { memoryId: m.id, capsule: { creatorId: user.id, status: "DRAFT" } },
+    select: { id: true },
   });
-  if (m.userId === user.id && links.every((l) => l.capsule.status === "DRAFT")) return true;
-
-  return links.some(({ capsule }) => {
-    if (capsule.status !== "AVAILABLE" && capsule.status !== "OPENED") return false;
-    if (capsule.creatorId === user.id) return true;
-    return capsule.recipients.some(
-      (r) =>
-        r.invitationStatus !== "DECLINED" &&
-        (r.userId === user.id || (r.userId == null && user.emailVerified && r.email === user.email)),
-    );
-  });
+  return Boolean(link);
 }
 
 export async function getMemoryUrls(user: SessionUser, memoryId: string, opts: { download?: boolean } = {}) {
@@ -375,7 +365,7 @@ export async function updateMemory(
   const m = await getOwnMemory(user.id, id);
   if (patch.categoryId) await assertCategory(user.id, patch.categoryId);
   if (patch.content !== undefined && m.mediaType !== "LETTER") throw badRequest("Only letters have editable text.");
-  if (patch.content !== undefined && (await isSealed(m.id))) throw conflict("This letter is sealed in a locked capsule and can't be changed.");
+  if (await db.capsuleMemory.count({ where: { memoryId: m.id, capsule: { status: "SEALING" } } })) throw conflict("This memory is being sealed and can't be changed.");
   const tags = patch.tags ? [...new Set(patch.tags.map((t) => t.trim().toLowerCase()).filter(Boolean))].slice(0, 30) : undefined;
   const updated = await db.memory.update({
     where: { id: m.id },
@@ -393,19 +383,10 @@ export async function updateMemory(
   return toMemoryDTO(updated);
 }
 
-/** True when the memory is inside a capsule that has been locked or released. */
-async function isSealed(memoryId: string): Promise<boolean> {
-  const n = await db.capsuleMemory.count({ where: { memoryId, capsule: { status: { notIn: ["DRAFT", "CANCELLED"] } } } });
-  return n > 0;
-}
-
 export async function deleteMemory(user: SessionUser, id: string) {
   const m = await getOwnMemory(user.id, id);
-  const active = await db.capsuleMemory.findFirst({
-    where: { memoryId: m.id, capsule: { status: { in: ["LOCKED", "SCHEDULED", "FAILED"] } } },
-    select: { capsule: { select: { title: true } } },
-  });
-  if (active) throw conflict(`This memory is sealed inside “${active.capsule.title}” and can't be deleted until that capsule opens.`);
+  const sealing = await db.capsuleMemory.findFirst({ where: { memoryId: m.id, capsule: { status: "SEALING" } }, select: { capsule: { select: { title: true } } } });
+  if (sealing) throw conflict(`This memory is being sealed into “${sealing.capsule.title}” and can't be changed.`);
   await db.memory.delete({ where: { id: m.id } });
   await deleteObjects([m.storageKey, m.thumbnailKey]);
   if (m.uploadId && m.storageKey) await storage().abortMultipartUpload(m.storageKey, m.uploadId).catch(() => {});
