@@ -16,11 +16,12 @@ type Options = {
   skipOriginCheck?: boolean;
 };
 
-export type Ctx<P, A extends AuthMode> = {
+export type Ctx<P> = {
   req: NextRequest;
   params: P;
   ip: string;
-  user: A extends "none" ? null : SessionUser;
+  /** The signed-in user. Not set (and must not be read) in `auth: "none"` routes. */
+  user: SessionUser;
 };
 
 export function clientIp(req: Request): string {
@@ -45,15 +46,12 @@ function assertSameOrigin(req: NextRequest) {
   }
 }
 
-export function api<P = Record<string, never>, A extends AuthMode = "user">(
-  opts: Options & { auth?: A },
-  handler: (ctx: Ctx<P, A>) => Promise<Response | unknown>,
-) {
+export function api<P = Record<string, never>>(opts: Options, handler: (ctx: Ctx<P>) => Promise<Response | unknown>) {
   return async (req: NextRequest, route: { params: Promise<P> }): Promise<Response> => {
     const ip = clientIp(req);
     try {
       if (!opts.skipOriginCheck) assertSameOrigin(req);
-      const mode = (opts.auth ?? "user") as AuthMode;
+      const mode = opts.auth ?? "user";
       let user: SessionUser | null = null;
       if (mode === "user") user = await requireUser();
       else if (mode === "admin") user = await requireAdmin();
@@ -62,7 +60,7 @@ export function api<P = Record<string, never>, A extends AuthMode = "user">(
         const who = user ? `u:${user.id}` : `ip:${ip}`;
         await rateLimit(`${opts.rateLimit.name}:${who}`, opts.rateLimit.limit, opts.rateLimit.windowSec);
       }
-      const result = await handler({ req, params: await route.params, ip, user: user as Ctx<P, A>["user"] });
+      const result = await handler({ req, params: await route.params, ip, user: user as SessionUser });
       if (result instanceof Response) return result;
       return NextResponse.json(result ?? { ok: true }, { headers: { "Cache-Control": "no-store" } });
     } catch (err) {
