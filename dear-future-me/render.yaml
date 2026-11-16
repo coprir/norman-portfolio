@@ -1,0 +1,75 @@
+# Render blueprint: web app + persistent release worker + Postgres + Redis.
+# In Render, create a Blueprint and set its path to dear-future-me/render.yaml.
+# Media lives in Cloudflare R2 / S3 (set the S3_* variables on both services).
+databases:
+  - name: dfm-postgres
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+
+services:
+  - type: keyvalue
+    name: dfm-redis
+    plan: starter
+    maxmemoryPolicy: noeviction # queued releases must never be evicted
+    ipAllowList: []
+
+  - type: web
+    name: dfm-web
+    runtime: docker
+    rootDir: dear-future-me
+    plan: starter
+    healthCheckPath: /api/health
+    preDeployCommand: npx prisma migrate deploy && npm run db:seed
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: { name: dfm-postgres, property: connectionString }
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: dfm-redis, property: connectionString }
+      - key: APP_URL
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: STORAGE_DRIVER
+        value: s3
+      - key: STORAGE_SIGNING_SECRET
+        generateValue: true
+      - { key: S3_ENDPOINT, sync: false }
+      - { key: S3_REGION, value: auto }
+      - { key: S3_BUCKET, sync: false }
+      - { key: S3_ACCESS_KEY_ID, sync: false }
+      - { key: S3_SECRET_ACCESS_KEY, sync: false }
+      - { key: RESEND_API_KEY, sync: false }
+      - { key: EMAIL_FROM, sync: false }
+      - { key: SEALING_PUBLIC_KEY, sync: false }
+      - { key: SENTRY_DSN, sync: false }
+
+  - type: worker
+    name: dfm-worker
+    runtime: docker
+    rootDir: dear-future-me
+    plan: starter
+    dockerCommand: npm run worker
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: { name: dfm-postgres, property: connectionString }
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: dfm-redis, property: connectionString }
+      - key: APP_URL
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: STORAGE_DRIVER
+        value: s3
+      - key: STORAGE_SIGNING_SECRET
+        generateValue: true
+      - { key: S3_ENDPOINT, sync: false }
+      - { key: S3_REGION, value: auto }
+      - { key: S3_BUCKET, sync: false }
+      - { key: S3_ACCESS_KEY_ID, sync: false }
+      - { key: S3_SECRET_ACCESS_KEY, sync: false }
+      - { key: RESEND_API_KEY, sync: false }
+      - { key: EMAIL_FROM, sync: false }
+      - { key: SEALING_PUBLIC_KEY, sync: false }
+      - { key: SENTRY_DSN, sync: false }
+      # The only place the unsealing key exists. Never add it to dfm-web.
+      - { key: KEY_RELEASE_PRIVATE_KEY, sync: false }

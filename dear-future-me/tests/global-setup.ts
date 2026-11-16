@@ -3,7 +3,7 @@ import fs from "node:fs";
 
 /** Tests run against a real, separate Postgres database and Redis db 1. */
 export default function setup() {
-  process.loadEnvFile(".env");
+  if (fs.existsSync(".env")) process.loadEnvFile(".env");
   const url = (process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL!.replace(/\/[^/?]+(\?|$)/, "/dfm_test$1"));
   if (!/test/.test(url)) throw new Error("Refusing to run tests against a non-test database");
   // Non-destructive: applies pending migrations to the dedicated test database.

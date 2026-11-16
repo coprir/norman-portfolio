@@ -1,6 +1,7 @@
 import { afterAll, vi } from "vitest";
 
-process.loadEnvFile(".env");
+import fs from "node:fs";
+if (fs.existsSync(".env")) process.loadEnvFile(".env");
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL!.replace(/\/[^/?]+(\?|$)/, "/dfm_test$1");
 process.env.REDIS_URL = (process.env.REDIS_URL ?? "redis://localhost:6379").replace(/\/\d+$/, "") + "/1";
 process.env.STORAGE_DRIVER = "local";

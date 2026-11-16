@@ -131,7 +131,7 @@ export function Reveal({ capsule, ai }: { capsule: CapsuleDTO; ai: boolean }) {
               <p className="eyebrow text-center">{sealedOn ? `Written ${sealedOn}` : "A message"}</p>
               <h2 ref={heading} tabIndex={-1} className="sr-only">Message</h2>
               <div className="mt-6 rounded-3xl bg-[#f3efe6] px-7 py-10 text-[#26231e] shadow-2xl shadow-black/50 sm:px-14 sm:py-14">
-                <p className="whitespace-pre-wrap font-serif text-[1.35rem] leading-[1.75] first-letter:float-left first-letter:mr-2 first-letter:font-serif first-letter:text-6xl first-letter:leading-[0.9]">{contents.message}</p>
+                <p className="whitespace-pre-wrap font-serif text-[1.35rem] leading-[1.75]">{contents.message}</p>
                 <p className="mt-10 font-serif text-lg italic text-[#8a8275]">— {capsule.creator.name}{sealedOn && `, ${sealedOn}`}</p>
               </div>
             </article>
